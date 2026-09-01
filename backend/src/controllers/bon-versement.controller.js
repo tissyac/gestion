@@ -349,10 +349,26 @@ const generatePDF = async (req, res, next) => {
     doc.font('Helvetica-Bold').fontSize(14).fillColor(colors.primary).text('Société', companyBoxX + 10, companyBoxY + 10);
     doc.font('Helvetica-Bold').fontSize(11).fillColor(colors.text).text(COMPANY_INFO.name, companyBoxX + 10, companyBoxY + 28, { width: companyBoxW - 20 });
     doc.font('Helvetica-Bold').fontSize(9).fillColor(colors.text).text('RC :', companyBoxX + 10, companyBoxY + 49);
-    const rcFontPath = 'C:/Windows/Fonts/arial.ttf';
-    doc.registerFont('rc-font', rcFontPath);
+    const rcFontCandidates = [
+      'C:/Windows/Fonts/arial.ttf',
+      'C:/Windows/Fonts/Arial.ttf',
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+      '/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf'
+    ];
+    let rcFontName = 'Helvetica';
+    for (const candidate of rcFontCandidates) {
+      if (fs.existsSync(candidate)) {
+        try {
+          doc.registerFont('rc-font', candidate);
+          rcFontName = 'rc-font';
+          break;
+        } catch (error) {
+          console.warn('Impossible d’enregistrer la police PDF:', error.message);
+        }
+      }
+    }
     const rcText = '14 B0188021';
-    doc.font('rc-font').fontSize(9).fillColor(colors.muted).text(rcText, companyBoxX + 35, companyBoxY + 49, { width: companyBoxW - 45 });
+    doc.font(rcFontName).fontSize(9).fillColor(colors.muted).text(rcText, companyBoxX + 35, companyBoxY + 49, { width: companyBoxW - 45 });
     doc.font('Helvetica-Bold').fontSize(9).fillColor(colors.text).text('NIF :', companyBoxX + 10, companyBoxY + 62);
     doc.font('Helvetica').fontSize(9).fillColor(colors.muted).text('001406018802120', companyBoxX + 35, companyBoxY + 62, { width: companyBoxW - 45 });
     doc.font('Helvetica-Bold').fontSize(9).fillColor(colors.text).text('NIS :', companyBoxX + 10, companyBoxY + 75);
