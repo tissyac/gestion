@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Plus, Trash2, Package } from 'lucide-react';
+import { Plus, Trash2, Package, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { bonCommandeService } from '../services/api';
@@ -314,8 +314,9 @@ export default function BonCommandePage() {
               <Package size={20} />
               {loading ? 'Création en cours...' : 'Créer le bon de commande'}
             </button>
-            <button type="button" onClick={() => navigate('/')} className="flex-1 flex items-center justify-center px-6 py-3 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition-colors">
-              Retour à l'accueil
+            <button type="button" onClick={() => navigate('/bons-commande-list')} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition-colors">
+              <List size={20} />
+              Voir les bons de commande
             </button>
           </div>
         </form>

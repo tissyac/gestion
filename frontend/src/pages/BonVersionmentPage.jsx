@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { bonVersionmentService } from '../services/api';
@@ -303,6 +303,10 @@ export default function BonVersionmentPage() {
             <button type="submit" disabled={loading} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors">
               <Plus size={20} />
               {loading ? 'Création en cours...' : 'Créer le bon de versement'}
+            </button>
+            <button type="button" onClick={() => navigate('/bons-versement-list')} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition-colors">
+              <List size={20} />
+              Voir les bons de versement
             </button>
           </div>
         </form>
