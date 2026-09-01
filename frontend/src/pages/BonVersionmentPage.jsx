@@ -165,7 +165,7 @@ export default function BonVersionmentPage() {
 
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="card border-2 border-gray-200">
-            <div className="flex justify-between items-start mb-6">
+            <div className="flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between sm:items-start">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{COMPANY_INFO.name}</h2>
                 <p className="text-sm text-gray-600">{COMPANY_INFO.address}</p>
@@ -187,7 +187,7 @@ export default function BonVersionmentPage() {
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 mb-4 text-sm text-blue-800">
               Sara Decorex est le bénéficiaire du bon de versement. Remplissez ici les informations de la personne ou de l’entreprise qui effectue le versement.
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Nom <span className="text-red-500">*</span></label>
                 <input type="text" name="emetteur_nom" value={formData.emetteur_nom} onChange={handleClientChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required />
@@ -261,7 +261,7 @@ export default function BonVersionmentPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <div className="card">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Taxe (TVA)</h3>
               <div className="space-y-2">
@@ -301,7 +301,7 @@ export default function BonVersionmentPage() {
             </div>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row">
             <button type="submit" disabled={loading} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors">
               <Plus size={20} />
               {loading ? 'Création en cours...' : 'Créer le bon de versement'}

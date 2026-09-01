@@ -165,7 +165,7 @@ export default function BonCommandePage() {
 
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="card border-2 border-gray-200">
-            <div className="flex justify-between items-start mb-6">
+            <div className="flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between sm:items-start">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{COMPANY_INFO.name}</h2>
                 <p className="text-sm text-gray-600">{COMPANY_INFO.address}</p>
@@ -184,7 +184,7 @@ export default function BonCommandePage() {
 
           <div className="card">
             <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-amber-500">Informations Fournisseur</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Nom du fournisseur <span className="text-red-500">*</span></label>
                 <input type="text" name="fournisseur_nom" value={formData.fournisseur_nom} onChange={handleClientChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" required />
@@ -263,7 +263,7 @@ export default function BonCommandePage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
             <div className="card">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Taxe (TVA)</h3>
               <div className="space-y-2">
@@ -309,7 +309,7 @@ export default function BonCommandePage() {
             </div>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row">
             <button type="submit" disabled={loading} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 disabled:bg-gray-400 transition-colors">
               <Package size={20} />
               {loading ? 'Création en cours...' : 'Créer le bon de commande'}

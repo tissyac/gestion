@@ -21,10 +21,13 @@ export default function Layout({ children }) {
     navigate('/login');
   };
 
+  const closeSidebarOnMobile = () => setSidebarOpen(false);
+
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white transition-all duration-300 overflow-hidden`}>
+      {sidebarOpen && <button type="button" aria-label="Fermer le menu" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-30 bg-black/40 md:hidden" />}
+      <div className={`${sidebarOpen ? 'translate-x-0 md:w-64' : '-translate-x-full md:translate-x-0 md:w-20'} fixed inset-y-0 left-0 z-40 w-64 bg-gray-900 text-white transition-all duration-300 overflow-hidden md:static md:shrink-0`}>
         <div className="p-4 border-b border-gray-700">
           <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'}`}>
             <span className="flex h-10 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
@@ -35,12 +38,12 @@ export default function Layout({ children }) {
         </div>
 
         <nav className="p-4 space-y-2">
-          <SidebarLink to="/" label="Tableau de bord" open={sidebarOpen} icon="📊" />
-          <SidebarLink to="/devis" label="Devis" open={sidebarOpen} icon="📝" />
-          <SidebarLink to="/factures" label="Factures" open={sidebarOpen} icon="📄" />
-          <SidebarLink to="/bons-commande" label="Bons de commande" open={sidebarOpen} icon="📦" />
-            <SidebarLink to="/bons-versement" label="Bons de versement" open={sidebarOpen} icon="💶" />
-            {user?.role === 'ADMIN' && <SidebarLink to="/admin" label="Administration" open={sidebarOpen} icon="🔐" />}
+          <SidebarLink to="/" label="Tableau de bord" open={sidebarOpen} icon="📊" onNavigate={closeSidebarOnMobile} />
+          <SidebarLink to="/devis" label="Devis" open={sidebarOpen} icon="📝" onNavigate={closeSidebarOnMobile} />
+          <SidebarLink to="/factures" label="Factures" open={sidebarOpen} icon="📄" onNavigate={closeSidebarOnMobile} />
+          <SidebarLink to="/bons-commande" label="Bons de commande" open={sidebarOpen} icon="📦" onNavigate={closeSidebarOnMobile} />
+          <SidebarLink to="/bons-versement" label="Bons de versement" open={sidebarOpen} icon="💶" onNavigate={closeSidebarOnMobile} />
+          {user?.role === 'ADMIN' && <SidebarLink to="/admin" label="Administration" open={sidebarOpen} icon="🔐" onNavigate={closeSidebarOnMobile} />}
         </nav>
       </div>
 
@@ -48,7 +51,7 @@ export default function Layout({ children }) {
       <div className="flex-1 flex flex-col">
         {/* Navbar */}
         <header className="bg-white shadow">
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-between gap-3 p-3 sm:p-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 hover:bg-gray-100 rounded-lg"
@@ -57,20 +60,20 @@ export default function Layout({ children }) {
             </button>
 
             <div className="flex items-center gap-4">
-              <span className="text-gray-700">{user?.prenom} {user?.nom}</span>
+              <span className="max-w-[120px] truncate text-sm text-gray-700 sm:max-w-none">{user?.prenom} {user?.nom}</span>
               <button
                 onClick={handleLogout}
                 className="btn-danger btn-small flex items-center gap-2"
               >
                 <LogOut size={16} />
-                Déconnexion
+                <span className="hidden sm:inline">Déconnexion</span>
               </button>
             </div>
           </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto p-6">
+        <main className="min-w-0 flex-1 overflow-auto p-3 sm:p-6">
           {children}
         </main>
       </div>
@@ -81,10 +84,11 @@ export default function Layout({ children }) {
 /**
  * Composant Lien Sidebar
  */
-function SidebarLink({ to, label, open, icon }) {
+function SidebarLink({ to, label, open, icon, onNavigate }) {
   return (
     <Link
       to={to}
+      onClick={onNavigate}
       className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm"
       title={!open ? label : ''}
     >

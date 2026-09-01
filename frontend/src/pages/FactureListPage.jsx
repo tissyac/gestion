@@ -108,7 +108,7 @@ export default function FactureListPage() {
         Retour
       </button>
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Mes Factures</h1>
           <p className="text-gray-600 mt-1">Gestion de vos factures - {total} au total</p>
