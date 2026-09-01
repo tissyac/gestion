@@ -344,16 +344,6 @@ export default function DevisPage() {
                             required
                           />
                         </td>
-                        <td className="px-4 py-3">
-                          <input
-                            type="number"
-                            step="0.0001"
-                            min="0"
-                            value={article.quantite}
-                            onChange={(e) => handleArticleChange(index, 'quantite', e.target.value)}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                          />
-                        </td>
                         <td className="px-2 py-2">
                           <select value={article.unite || 'pièce'} onChange={(e) => handleArticleChange(index, 'unite', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                             <option value="pièce">Pièce</option>
@@ -363,6 +353,16 @@ export default function DevisPage() {
                             <option value="heure">Heure</option>
                             <option value="forfait">Forfait</option>
                           </select>
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            step="0.0001"
+                            min="0"
+                            value={article.quantite}
+                            onChange={(e) => handleArticleChange(index, 'quantite', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          />
                         </td>
                         <td className="px-4 py-3">
                           <input
