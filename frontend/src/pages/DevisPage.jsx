@@ -310,9 +310,9 @@ export default function DevisPage() {
           </div>
 
           {/* Section Articles */}
-          <div className="card">
+          <div className="card" data-devis-version="unit-quantity-fixed">
             <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-500">
-              Articles - version corrigee
+              Articles
             </h3>
 
             <div className="overflow-x-auto">
