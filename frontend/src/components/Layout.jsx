@@ -36,6 +36,7 @@ export default function Layout({ children }) {
           <SidebarLink to="/factures" label="Factures" open={sidebarOpen} icon="📄" />
           <SidebarLink to="/bons-commande" label="Bons de commande" open={sidebarOpen} icon="📦" />
             <SidebarLink to="/bons-versement" label="Bons de versement" open={sidebarOpen} icon="💶" />
+            {user?.role === 'ADMIN' && <SidebarLink to="/admin" label="Administration" open={sidebarOpen} icon="🔐" />}
         </nav>
       </div>
 

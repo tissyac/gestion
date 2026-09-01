@@ -6,6 +6,7 @@
  */
 
 const initSqlJs = require('sql.js');
+const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 
@@ -43,6 +44,7 @@ async function initDatabase() {
 
     db.run('PRAGMA foreign_keys = ON;');
     createSchema();
+    await ensureAdminUser();
     saveDatabase();
   }
 }
@@ -224,6 +226,37 @@ function createSchema() {
   ensureDevisEmailColumn();
   ensureDevisDateColumn();
   ensureBonVersementColumns();
+  ensureUserRoleColumn();
+}
+
+function ensureUserRoleColumn() {
+  const result = db.exec('PRAGMA table_info(users)');
+  const columns = result[0]?.values || [];
+  if (!columns.some(column => column[1] === 'role')) {
+    db.exec("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'USER'");
+    saveDatabase();
+  }
+}
+
+async function ensureAdminUser() {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  if (!email || !password) return;
+
+  const existing = query('SELECT id FROM users WHERE email = ?', [email]);
+  if (existing.rows.length > 0) {
+    query('UPDATE users SET role = ? WHERE email = ?', ['ADMIN', email]);
+    return;
+  }
+
+  const { v4: uuidv4 } = require('uuid');
+  const passwordHash = await bcrypt.hash(password, 10);
+  query(
+    `INSERT INTO users (id, nom, prenom, email, password, role, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'ADMIN', datetime('now'), datetime('now'))`,
+    [uuidv4(), process.env.ADMIN_NOM || 'Administrateur', process.env.ADMIN_PRENOM || '', email, passwordHash]
+  );
+  console.log(`✅ Compte administrateur prêt: ${email}`);
 }
 
 function ensureDevisUnitColumn() {

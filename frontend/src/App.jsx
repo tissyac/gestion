@@ -23,6 +23,7 @@ import BonCommandePage from './pages/BonCommandePage';
 import BonCommandeListPage from './pages/BonCommandeListPage';
 import BonVersionmentPage from './pages/BonVersionmentPage';
 import BonVersionmentListPage from './pages/BonVersionmentListPage';
+import AdminPage from './pages/AdminPage';
 
 // Composant Route Protégée
 function ProtectedRoute({ children }) {
@@ -32,6 +33,14 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.role !== 'ADMIN') return <Navigate to="/" replace />;
   return children;
 }
 
@@ -194,6 +203,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
         {/* Route 404 */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

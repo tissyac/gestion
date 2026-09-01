@@ -100,4 +100,8 @@ export const bonVersionmentService = {
   generatePDF: (id) => apiClient.get(`/bons-versement/${id}/pdf`, { responseType: 'blob' }),
 };
 
+export const adminService = {
+  overview: () => apiClient.get('/admin/overview')
+};
+
 export default apiClient;

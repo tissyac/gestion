@@ -75,7 +75,8 @@ const register = async (req, res, next) => {
       id: userData.id,
       email: userData.email,
       nom: userData.nom,
-      prenom: userData.prenom
+      prenom: userData.prenom,
+      role: userData.role || 'USER'
     });
 
     res.status(201).json({
@@ -86,7 +87,8 @@ const register = async (req, res, next) => {
         id: userData.id,
         email: userData.email,
         nom: userData.nom,
-        prenom: userData.prenom
+        prenom: userData.prenom,
+        role: userData.role || 'USER'
       }
     });
   } catch (err) {
@@ -132,7 +134,8 @@ const login = async (req, res, next) => {
       id: user.id,
       email: user.email,
       nom: user.nom,
-      prenom: user.prenom
+      prenom: user.prenom,
+      role: user.role || 'USER'
     });
 
     res.json({
@@ -143,7 +146,8 @@ const login = async (req, res, next) => {
         id: user.id,
         email: user.email,
         nom: user.nom,
-        prenom: user.prenom
+        prenom: user.prenom,
+        role: user.role || 'USER'
       }
     });
   } catch (err) {

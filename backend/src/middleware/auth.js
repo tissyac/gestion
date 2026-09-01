@@ -51,7 +51,15 @@ const generateToken = (payload) => {
   });
 };
 
+const requireAdmin = (req, res, next) => {
+  if (req.user?.role !== 'ADMIN') {
+    throw new AppError('Accès réservé à l’administrateur.', 403);
+  }
+  next();
+};
+
 module.exports = {
   verifyToken,
+  requireAdmin,
   generateToken
 };

@@ -23,6 +23,7 @@ const devisRoutes = require('./routes/devis.routes');
 const factureRoutes = require('./routes/facture.routes');
 const bonCommandeRoutes = require('./routes/bon-commande.routes');
 const bonVersionnementRoutes = require('./routes/bon-versement.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 // Import des middlewares
 const { errorHandler } = require('./middleware/errorHandler');
@@ -79,6 +80,9 @@ app.use('/api/bons-commande', bonCommandeRoutes);
 
 // Bons de versement
 app.use('/api/bons-versement', bonVersionnementRoutes);
+
+// Administration (réservée au rôle ADMIN)
+app.use('/api/admin', adminRoutes);
 
 // ===== ROUTE DE SANTÉ =====
 app.get('/api/health', (req, res) => {
