@@ -347,7 +347,7 @@ export default function DevisPage() {
                         <td className="px-4 py-3">
                           <input
                             type="number"
-                            step="0.01"
+                            step="0.0001"
                             min="0"
                             value={article.quantite}
                             onChange={(e) => handleArticleChange(index, 'quantite', e.target.value)}

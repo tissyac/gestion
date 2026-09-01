@@ -349,11 +349,14 @@ const generatePDF = async (req, res, next) => {
     doc.font('Helvetica-Bold').fontSize(14).fillColor(colors.primary).text('Société', companyBoxX + 10, companyBoxY + 10);
     doc.font('Helvetica-Bold').fontSize(11).fillColor(colors.text).text(COMPANY_INFO.name, companyBoxX + 10, companyBoxY + 28, { width: companyBoxW - 20 });
     doc.font('Helvetica-Bold').fontSize(9).fillColor(colors.text).text('RC :', companyBoxX + 10, companyBoxY + 49);
-    doc.font('Helvetica').fontSize(9).fillColor(colors.muted).text(COMPANY_INFO.rc, companyBoxX + 35, companyBoxY + 49, { width: companyBoxW - 45 });
+    const rcFontPath = 'C:/Windows/Fonts/arial.ttf';
+    doc.registerFont('rc-font', rcFontPath);
+    const rcText = '14 B0188021';
+    doc.font('rc-font').fontSize(9).fillColor(colors.muted).text(rcText, companyBoxX + 35, companyBoxY + 49, { width: companyBoxW - 45 });
     doc.font('Helvetica-Bold').fontSize(9).fillColor(colors.text).text('NIF :', companyBoxX + 10, companyBoxY + 62);
-    doc.font('Helvetica').fontSize(9).fillColor(colors.muted).text(COMPANY_INFO.nif, companyBoxX + 35, companyBoxY + 62, { width: companyBoxW - 45 });
-    doc.font('Helvetica-Bold').fontSize(9).fillColor(colors.text).text('AI :', companyBoxX + 10, companyBoxY + 75);
-    doc.font('Helvetica').fontSize(9).fillColor(colors.muted).text(COMPANY_INFO.ai, companyBoxX + 35, companyBoxY + 75, { width: companyBoxW - 45 });
+    doc.font('Helvetica').fontSize(9).fillColor(colors.muted).text('001406018802120', companyBoxX + 35, companyBoxY + 62, { width: companyBoxW - 45 });
+    doc.font('Helvetica-Bold').fontSize(9).fillColor(colors.text).text('NIS :', companyBoxX + 10, companyBoxY + 75);
+    doc.font('Helvetica').fontSize(9).fillColor(colors.muted).text('0 014 0633 00075 61', companyBoxX + 35, companyBoxY + 75, { width: companyBoxW - 45 });
     doc.font('Helvetica-Bold').fontSize(9).fillColor(colors.text).text('Tél :', companyBoxX + 10, companyBoxY + 90);
     doc.font('Helvetica').fontSize(9).fillColor(colors.muted).text(`${COMPANY_INFO.phone} / ${COMPANY_INFO.mobile1} / ${COMPANY_INFO.mobile2}`, companyBoxX + 35, companyBoxY + 90, { width: companyBoxW - 45 });
     doc.font('Helvetica-Bold').fontSize(9).fillColor(colors.text).text('Email :', companyBoxX + 10, companyBoxY + 104);

@@ -207,36 +207,47 @@ export default function BonCommandePage() {
           <div className="card">
             <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-amber-500">Articles</h3>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[900px]">
                 <thead>
                   <tr className="border-b-2 border-gray-300 bg-gray-50">
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-12">N°</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 flex-1">Désignation</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-24">Unité</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-24">Quantité</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-32">Prix Unitaire (DA)</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-32">Total (DA)</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-12">Action</th>
+                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 w-12">N°</th>
+                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 min-w-[240px]">Désignation</th>
+                    <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700 w-24">Unité</th>
+                    <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700 w-24">Quantité</th>
+                    <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700 w-32">Prix Unitaire (DA)</th>
+                    <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700 w-32">Total (DA)</th>
+                    <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700 w-14">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {formData.articles.map((article, index) => {
                     const total = (parseFloat(article.quantite) || 0) * (parseFloat(article.prix_unitaire) || 0);
                     return (
-                      <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm text-gray-700 font-medium">{index + 1}</td>
-                        <td className="px-4 py-3">
-                          <input type="text" placeholder="Ex: Matériel de décoration" value={article.designation} onChange={(e) => handleArticleChange(index, 'designation', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm" required />
+                      <tr key={index} className="border-b border-gray-200 hover:bg-gray-50 align-top">
+                        <td className="px-3 py-3 text-sm text-gray-700 font-medium">{index + 1}</td>
+                        <td className="px-3 py-3">
+                          <input type="text" placeholder="Ex: Matériel de décoration" value={article.designation} onChange={(e) => handleArticleChange(index, 'designation', e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm" required />
                         </td>
-                        <td className="px-4 py-3">
-                          <select value={article.unite || 'pièce'} onChange={(e) => handleArticleChange(index, 'unite', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"><option value="pièce">Pièce</option><option value="m²">m²</option><option value="ml">ml</option><option value="kg">kg</option><option value="heure">Heure</option><option value="forfait">Forfait</option></select>
-                          <input type="number" step="0.01" min="0" value={article.quantite} onChange={(e) => handleArticleChange(index, 'quantite', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm" />
+                        <td className="px-3 py-3">
+                          <select value={article.unite || 'pièce'} onChange={(e) => handleArticleChange(index, 'unite', e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
+                            <option value="pièce">Pièce</option>
+                            <option value="m²">m²</option>
+                            <option value="ml">ml</option>
+                            <option value="kg">kg</option>
+                            <option value="heure">Heure</option>
+                            <option value="forfait">Forfait</option>
+                          </select>
                         </td>
-                        <td className="px-4 py-3">
-                          <input type="number" step="0.01" min="0" value={article.prix_unitaire} onChange={(e) => handleArticleChange(index, 'prix_unitaire', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm" />
+                        <td className="px-3 py-3">
+                          <input type="number" step="0.0001" min="0" value={article.quantite} onChange={(e) => handleArticleChange(index, 'quantite', e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm" />
                         </td>
-                        <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900">{total.toFixed(2).replace('.', ',')}</td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-3 py-3">
+                          <input type="number" step="0.01" min="0" value={article.prix_unitaire} onChange={(e) => handleArticleChange(index, 'prix_unitaire', e.target.value)} className="w-full px-2 py-2 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm" />
+                        </td>
+                        <td className="px-3 py-3 text-sm text-right font-semibold text-gray-900">
+                          {total.toFixed(2).replace('.', ',')}
+                        </td>
+                        <td className="px-3 py-3 text-center">
                           <button type="button" onClick={() => removeArticle(index)} disabled={formData.articles.length === 1} className="text-red-500 hover:text-red-700 disabled:text-gray-300 transition-colors">
                             <Trash2 size={18} />
                           </button>
@@ -272,18 +283,14 @@ export default function BonCommandePage() {
                   <span className="font-medium text-gray-700">Montant H.T :</span>
                   <span className="font-bold text-gray-900">{montantHT.toFixed(2).replace('.', ',')} DA</span>
                 </div>
-                {formData.tva > 0 && (
-                  <div className="flex justify-between items-center text-lg border-t border-amber-200 pt-3">
-                    <span className="font-medium text-gray-700">Montant TVA ({formData.tva}%) :</span>
-                    <span className="font-bold text-gray-900">{montantTVA.toFixed(2).replace('.', ',')} DA</span>
-                  </div>
-                )}
-                {formData.tva > 0 && (
-                  <div className="flex justify-between items-center text-xl bg-white border-2 border-amber-500 rounded-lg p-3 mt-4">
-                    <span className="font-bold text-amber-600">Montant T.T.C :</span>
-                    <span className="font-bold text-amber-600 text-2xl">{montantTTC.toFixed(2).replace('.', ',')} DA</span>
-                  </div>
-                )}
+                <div className="flex justify-between items-center text-lg border-t border-amber-200 pt-3">
+                  <span className="font-medium text-gray-700">Montant TVA ({formData.tva}%) :</span>
+                  <span className="font-bold text-gray-900">{montantTVA.toFixed(2).replace('.', ',')} DA</span>
+                </div>
+                <div className="flex justify-between items-center text-xl bg-white border-2 border-amber-500 rounded-lg p-3 mt-4">
+                  <span className="font-bold text-amber-600">Montant T.T.C :</span>
+                  <span className="font-bold text-amber-600 text-2xl">{montantTTC.toFixed(2).replace('.', ',')} DA</span>
+                </div>
               </div>
             </div>
           </div>

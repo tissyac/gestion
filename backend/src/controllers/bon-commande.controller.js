@@ -13,6 +13,83 @@ const { query } = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 const { COMPANY_INFO, PAYMENT_TERMS, DELIVERY_TERMS, QUOTE_VALIDITY } = require('../config/company');
 
+const formatDate = (value) => {
+  if (!value) return new Date().toLocaleDateString('fr-FR');
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [year, month, day] = trimmed.split('-').map(Number);
+      return new Date(year, month - 1, day).toLocaleDateString('fr-FR');
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}T/.test(trimmed)) {
+      const parsed = new Date(trimmed);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toLocaleDateString('fr-FR');
+      }
+    }
+  }
+
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString('fr-FR');
+  }
+
+  return new Date().toLocaleDateString('fr-FR');
+};
+
+const calculateLineTotal = (article) => {
+  const quantity = Number(article?.quantite ?? 0);
+  const unitPrice = Number(article?.prix_unitaire ?? 0);
+  const total = Number.isFinite(quantity) && Number.isFinite(unitPrice) ? quantity * unitPrice : 0;
+  return Number.isFinite(total) ? total : 0;
+};
+
+const parseBonDescription = (descriptionValue) => {
+  const fallback = {
+    description: '',
+    articles: [],
+    contactPhone: '-',
+    contactEmail: '-',
+    contactAddress: ''
+  };
+
+  if (!descriptionValue) return fallback;
+
+  if (typeof descriptionValue === 'object') {
+    return {
+      description: descriptionValue.description || '',
+      articles: Array.isArray(descriptionValue.articles) ? descriptionValue.articles : [],
+      contactPhone: descriptionValue.fournisseur_telephone || descriptionValue.contactPhone || '-',
+      contactEmail: descriptionValue.fournisseur_email || descriptionValue.contactEmail || '-',
+      contactAddress: descriptionValue.fournisseur_adresse || descriptionValue.contactAddress || ''
+    };
+  }
+
+  if (typeof descriptionValue !== 'string') return fallback;
+
+  try {
+    const parsed = JSON.parse(descriptionValue);
+    if (parsed && typeof parsed === 'object') {
+      return {
+        description: parsed.description || '',
+        articles: Array.isArray(parsed.articles) ? parsed.articles : [],
+        contactPhone: parsed.fournisseur_telephone || parsed.contactPhone || '-',
+        contactEmail: parsed.fournisseur_email || parsed.contactEmail || '-',
+        contactAddress: parsed.fournisseur_adresse || parsed.contactAddress || ''
+      };
+    }
+  } catch {
+    // fallback to plain text description
+  }
+
+  return {
+    ...fallback,
+    description: descriptionValue
+  };
+};
+
 /**
  * Liste tous les bons de commande
  */
@@ -77,7 +154,18 @@ const getBon = async (req, res, next) => {
  */
 const createBon = async (req, res, next) => {
   try {
-    const { numero, fournisseur, fournisseur_nom, montant, description, articles = [] } = req.body;
+    const {
+      numero,
+      fournisseur,
+      fournisseur_nom,
+      montant,
+      description,
+      articles = [],
+      fournisseur_telephone,
+      fournisseur_email,
+      fournisseur_adresse,
+      date_commande
+    } = req.body;
     const fournisseurValue = (fournisseur || fournisseur_nom || '').toString().trim();
     const parsedMontant = montant !== undefined
       ? Number(montant)
@@ -89,11 +177,19 @@ const createBon = async (req, res, next) => {
       throw new AppError('Champs requis: numero, fournisseur, montant', 400);
     }
 
+    const descriptionPayload = JSON.stringify({
+      description: description || '',
+      articles: Array.isArray(articles) ? articles : [],
+      fournisseur_telephone: (fournisseur_telephone || '').toString().trim(),
+      fournisseur_email: (fournisseur_email || '').toString().trim(),
+      fournisseur_adresse: (fournisseur_adresse || '').toString().trim()
+    });
+
     const id = uuidv4();
     await query(
-      `INSERT INTO bons_commande (id, numero, fournisseur, montant, description, statut, created_at, user_id) 
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)`,
-      [id, numero, fournisseurValue, parsedMontant, JSON.stringify({ description: description || '', articles }), 'EN_ATTENTE', req.user.id]
+      `INSERT INTO bons_commande (id, numero, fournisseur, montant, description, statut, date_commande, created_at, user_id) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)`,
+      [id, numero, fournisseurValue, parsedMontant, descriptionPayload, 'EN_ATTENTE', date_commande || null, req.user.id]
     );
 
     const created = await query('SELECT * FROM bons_commande WHERE id = $1', [id]);
@@ -114,7 +210,7 @@ const createBon = async (req, res, next) => {
 const updateBon = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { numero, fournisseur, montant, description, statut } = req.body;
+    const { numero, fournisseur, montant, description, statut, date_commande } = req.body;
 
     const existingResult = await query(
       'SELECT * FROM bons_commande WHERE id = $1',
@@ -148,6 +244,10 @@ const updateBon = async (req, res, next) => {
     if (statut !== undefined) {
       updates.push(`statut = $${paramCount++}`);
       values.push(statut);
+    }
+    if (date_commande !== undefined) {
+      updates.push(`date_commande = $${paramCount++}`);
+      values.push(date_commande);
     }
 
     if (updates.length === 0) {
@@ -228,25 +328,12 @@ const generatePDF = async (req, res, next) => {
       return text.replace(/\u202f/g, ' ');
     };
 
-    const formatDate = (value) => {
-      if (!value) return new Date().toLocaleDateString('fr-FR');
-      if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
-        const [year, month, day] = value.split('-').map(Number);
-        return new Date(year, month - 1, day).toLocaleDateString('fr-FR');
-      }
-      return new Date(value).toLocaleDateString('fr-FR');
-    };
-
     const orderDate = bon.date_commande || bon.created_at;
     const clientName = bon.fournisseur || '-';
-    const contactEmail = '-';
-    const contactPhone = '-';
-    let storedArticles = [];
-    try {
-      storedArticles = bon.description ? JSON.parse(bon.description).articles || [] : [];
-    } catch {
-      storedArticles = [];
-    }
+    const parsedDescription = parseBonDescription(bon.description);
+    const contactEmail = parsedDescription.contactEmail || '-';
+    const contactPhone = parsedDescription.contactPhone || '-';
+    let storedArticles = parsedDescription.articles || [];
 
     const items = storedArticles.length > 0 ? storedArticles : [{
       designation: bon.description || 'Montant du bon de commande',
@@ -334,11 +421,16 @@ const generatePDF = async (req, res, next) => {
       .fontSize(9)
       .fillColor(colors.text)
       .text('RC :', companyBoxX + 10, companyBoxY + 49);
+    const rcFontPath = 'C:/Windows/Fonts/arial.ttf';
+    doc.registerFont('rc-font', rcFontPath);
+
+    const rcText = '14 B0188021';
+
     doc
-      .font('Helvetica')
+      .font('rc-font')
       .fontSize(9)
       .fillColor(colors.muted)
-      .text(COMPANY_INFO.rc, companyBoxX + 35, companyBoxY + 49, { width: companyBoxW - 45 });
+      .text(rcText, companyBoxX + 35, companyBoxY + 49, { width: companyBoxW - 45 });
 
     doc
       .font('Helvetica-Bold')
@@ -349,18 +441,18 @@ const generatePDF = async (req, res, next) => {
       .font('Helvetica')
       .fontSize(9)
       .fillColor(colors.muted)
-      .text(COMPANY_INFO.nif, companyBoxX + 35, companyBoxY + 62, { width: companyBoxW - 45 });
+      .text('001406018802120', companyBoxX + 35, companyBoxY + 62, { width: companyBoxW - 45 });
 
     doc
       .font('Helvetica-Bold')
       .fontSize(9)
       .fillColor(colors.text)
-      .text('AI :', companyBoxX + 10, companyBoxY + 75);
+      .text('NIS :', companyBoxX + 10, companyBoxY + 75);
     doc
       .font('Helvetica')
       .fontSize(9)
       .fillColor(colors.muted)
-      .text(COMPANY_INFO.ai, companyBoxX + 35, companyBoxY + 75, { width: companyBoxW - 45 });
+      .text('0 014 0633 00075 61', companyBoxX + 35, companyBoxY + 75, { width: companyBoxW - 45 });
 
     doc
       .font('Helvetica-Bold')
@@ -484,6 +576,10 @@ const generatePDF = async (req, res, next) => {
           ? `${article.designation.substring(0, 39)}...`
           : article.designation;
 
+        const lineTotal = calculateLineTotal(article);
+        const safeUnitPrice = Number(article.prix_unitaire ?? 0);
+        const safeQuantity = Number(article.quantite ?? 0);
+
         doc
           .font('Helvetica')
           .fontSize(tableFontSize)
@@ -491,10 +587,10 @@ const generatePDF = async (req, res, next) => {
           .text(index + 1, cols.no, rowY + 5, { width: 24, align: 'center' })
           .text(descriptionText, cols.desc, rowY + 5, { width: 228 })
           .text(article.unite || 'pièce', cols.unit, rowY + 5, { width: 40, align: 'center' })
-          .text(String(article.quantite), cols.qty, rowY + 5, { width: 34, align: 'center' })
-          .text(formatPrice(article.prix_unitaire) + ' DA', cols.pu, rowY + 5, { width: 80, align: 'right', lineBreak: false })
+          .text(String(safeQuantity), cols.qty, rowY + 5, { width: 34, align: 'center' })
+          .text(formatPrice(safeUnitPrice) + ' DA', cols.pu, rowY + 5, { width: 80, align: 'right', lineBreak: false })
           .font('Helvetica-Bold')
-          .text(formatPrice(article.total_ligne) + ' DA', cols.total, rowY + 5, { width: 90, align: 'right', lineBreak: false });
+          .text(formatPrice(lineTotal) + ' DA', cols.total, rowY + 5, { width: 90, align: 'right', lineBreak: false });
 
         rowY += rowHeight;
       });
@@ -615,5 +711,8 @@ module.exports = {
   createBon,
   updateBon,
   deleteBon,
-  generatePDF
+  generatePDF,
+  parseBonDescription,
+  formatDate,
+  calculateLineTotal
 };

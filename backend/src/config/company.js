@@ -13,9 +13,9 @@ const COMPANY_INFO = {
   mobile1: '0770 06 46 05',
   mobile2: '0770 16 01 91',
   email: 'sara.decorex@gmail.com',
-  rc: '14 B 018821-00/006',
-  nif: '001406339003841',
-  ai: '06330435052',
+  rc: '14 B0188021',
+  nif: '001406018802120',
+  ai: '0 014 0633 00075 61',
   logo: '/logo.png', // À ajouter dans le dossier public
 };
 

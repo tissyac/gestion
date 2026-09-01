@@ -473,11 +473,16 @@ const generatePDF = async (req, res, next) => {
       .fontSize(9)
       .fillColor(colors.text)
       .text('RC :', companyBoxX + 10, companyBoxY + 49);
+    const rcFontPath = 'C:/Windows/Fonts/arial.ttf';
+    doc.registerFont('rc-font', rcFontPath);
+
+    const rcText = '14 B0188021';
+
     doc
-      .font('Helvetica')
+      .font('rc-font')
       .fontSize(9)
       .fillColor(colors.muted)
-      .text(COMPANY_INFO.rc, companyBoxX + 35, companyBoxY + 49, { width: companyBoxW - 45 });
+      .text(rcText, companyBoxX + 35, companyBoxY + 49, { width: companyBoxW - 45 });
 
     doc
       .font('Helvetica-Bold')
@@ -488,18 +493,18 @@ const generatePDF = async (req, res, next) => {
       .font('Helvetica')
       .fontSize(9)
       .fillColor(colors.muted)
-      .text(COMPANY_INFO.nif, companyBoxX + 35, companyBoxY + 62, { width: companyBoxW - 45 });
+      .text('001406018802120', companyBoxX + 35, companyBoxY + 62, { width: companyBoxW - 45 });
 
     doc
       .font('Helvetica-Bold')
       .fontSize(9)
       .fillColor(colors.text)
-      .text('AI :', companyBoxX + 10, companyBoxY + 75);
+      .text('NIS :', companyBoxX + 10, companyBoxY + 75);
     doc
       .font('Helvetica')
       .fontSize(9)
       .fillColor(colors.muted)
-      .text(COMPANY_INFO.ai, companyBoxX + 35, companyBoxY + 75, { width: companyBoxW - 45 });
+      .text('0 014 0633 00075 61', companyBoxX + 35, companyBoxY + 75, { width: companyBoxW - 45 });
 
     doc
       .font('Helvetica-Bold')

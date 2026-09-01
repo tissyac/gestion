@@ -244,8 +244,17 @@ export default function FacturePage() {
                           <input type="text" placeholder="Ex: Consultation architecte" value={article.designation} onChange={(e) => handleArticleChange(index, 'designation', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-sm" required />
                         </td>
                         <td className="px-4 py-3">
-                          <select value={article.unite || 'pièce'} onChange={(e) => handleArticleChange(index, 'unite', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"><option value="pièce">Pièce</option><option value="m²">m²</option><option value="ml">ml</option><option value="kg">kg</option><option value="heure">Heure</option><option value="forfait">Forfait</option></select>
-                          <input type="number" step="0.01" min="0" value={article.quantite} onChange={(e) => handleArticleChange(index, 'quantite', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-green-500 text-sm" />
+                          <select value={article.unite || 'pièce'} onChange={(e) => handleArticleChange(index, 'unite', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                            <option value="pièce">Pièce</option>
+                            <option value="m²">m²</option>
+                            <option value="ml">ml</option>
+                            <option value="kg">kg</option>
+                            <option value="heure">Heure</option>
+                            <option value="forfait">Forfait</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-3">
+                          <input type="number" step="0.0001" min="0" value={article.quantite} onChange={(e) => handleArticleChange(index, 'quantite', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-green-500 text-sm" />
                         </td>
                         <td className="px-4 py-3">
                           <input type="number" step="0.01" min="0" value={article.prix_unitaire} onChange={(e) => handleArticleChange(index, 'prix_unitaire', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-green-500 text-sm" />

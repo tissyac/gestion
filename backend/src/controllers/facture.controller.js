@@ -13,6 +13,63 @@ const { query } = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 const { COMPANY_INFO, PAYMENT_TERMS, DELIVERY_TERMS, QUOTE_VALIDITY } = require('../config/company');
 
+const calculateLineTotal = (article) => {
+  const quantity = Number(article?.quantite ?? 0);
+  const unitPrice = Number(article?.prix_unitaire ?? 0);
+  const total = Number.isFinite(quantity) && Number.isFinite(unitPrice) ? quantity * unitPrice : 0;
+  return Number.isFinite(total) ? total : 0;
+};
+
+const calculateInvoiceTotal = (articles = []) =>
+  articles.reduce((sum, article) => sum + calculateLineTotal(article), 0);
+
+const parseFactureDescription = (descriptionValue) => {
+  const fallback = {
+    description: '',
+    articles: [],
+    clientPhone: '-',
+    clientEmail: '-',
+    clientAddress: '',
+    tva: 0
+  };
+
+  if (!descriptionValue) return fallback;
+
+  if (typeof descriptionValue === 'object') {
+    return {
+      description: descriptionValue.description || '',
+      articles: Array.isArray(descriptionValue.articles) ? descriptionValue.articles : [],
+      clientPhone: descriptionValue.client_telephone || descriptionValue.clientPhone || '-',
+      clientEmail: descriptionValue.client_email || descriptionValue.clientEmail || '-',
+      clientAddress: descriptionValue.client_adresse || descriptionValue.clientAddress || '',
+      tva: Number(descriptionValue.tva ?? descriptionValue.TVA ?? 0) || 0
+    };
+  }
+
+  if (typeof descriptionValue !== 'string') return fallback;
+
+  try {
+    const parsed = JSON.parse(descriptionValue);
+    if (parsed && typeof parsed === 'object') {
+      return {
+        description: parsed.description || '',
+        articles: Array.isArray(parsed.articles) ? parsed.articles : [],
+        clientPhone: parsed.client_telephone || parsed.clientPhone || '-',
+        clientEmail: parsed.client_email || parsed.clientEmail || '-',
+        clientAddress: parsed.client_adresse || parsed.clientAddress || '',
+        tva: Number(parsed.tva ?? parsed.TVA ?? 0) || 0
+      };
+    }
+  } catch {
+    // fallback to plain text description
+  }
+
+  return {
+    ...fallback,
+    description: descriptionValue
+  };
+};
+
 /**
  * Liste toutes les factures
  */
@@ -77,17 +134,45 @@ const getFacture = async (req, res, next) => {
  */
 const createFacture = async (req, res, next) => {
   try {
-    const { numero, client, montant, description, articles = [] } = req.body;
+    const {
+      numero,
+      client,
+      montant,
+      description,
+      articles = [],
+      client_telephone,
+      client_email,
+      client_adresse,
+      date_facture,
+      tva
+    } = req.body;
 
     if (!numero || !client || montant === undefined) {
       throw new AppError('Champs requis: numero, client, montant', 400);
     }
 
+    const safeTotal = Number.isFinite(Number(montant)) ? Number(montant) : calculateInvoiceTotal(articles);
+    const safeTva = Number(tva) || 0;
+    const descriptionPayload = JSON.stringify({
+      description: description || '',
+      articles: Array.isArray(articles) ? articles.map((article) => ({
+        ...article,
+        quantite: Number(article.quantite) || 0,
+        prix_unitaire: Number(article.prix_unitaire) || 0,
+        total_ligne: calculateLineTotal(article)
+      })) : [],
+      client_telephone: (client_telephone || '').toString().trim(),
+      client_email: (client_email || '').toString().trim(),
+      client_adresse: (client_adresse || '').toString().trim(),
+      date_facture: date_facture || null,
+      tva: safeTva
+    });
+
     const id = uuidv4();
     await query(
-      `INSERT INTO factures (id, numero, client, montant, description, statut, created_at, user_id) 
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)`,
-      [id, numero, client, montant, JSON.stringify({ description: description || '', articles }), 'EN_ATTENTE', req.user.id]
+      `INSERT INTO factures (id, numero, client, montant, description, statut, date_facture, created_at, user_id) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)`,
+      [id, numero, client, safeTotal, descriptionPayload, 'EN_ATTENTE', date_facture || null, req.user.id]
     );
 
     const created = await query('SELECT * FROM factures WHERE id = $1', [id]);
@@ -210,9 +295,10 @@ const generatePDF = async (req, res, next) => {
     }
 
     const facture = result.rows[0];
-    const montantHT = Number(facture.montant || 0);
-    const montantTVA = 0;
-    const montantTTC = montantHT;
+    const parsedDescription = parseFactureDescription(facture.description);
+    const montantHT = Number(facture.montant || calculateInvoiceTotal(parsedDescription.articles) || 0);
+    const montantTVA = (Number(parsedDescription.tva) || 0) > 0 ? (montantHT * (Number(parsedDescription.tva) || 0)) / 100 : 0;
+    const montantTTC = montantHT + montantTVA;
 
     const formatPrice = (num) => {
       const text = new Intl.NumberFormat('fr-FR', {
@@ -233,14 +319,15 @@ const generatePDF = async (req, res, next) => {
 
     const invoiceDate = facture.date_facture || facture.created_at;
     const clientName = facture.client || '-';
-    const contactEmail = '-';
-    const contactPhone = '-';
-    let storedArticles = [];
-    try {
-      storedArticles = facture.description ? JSON.parse(facture.description).articles || [] : [];
-    } catch {
-      storedArticles = [];
-    }
+    const contactEmail = parsedDescription.clientEmail || '-';
+    const contactPhone = parsedDescription.clientPhone || '-';
+    const storedArticles = parsedDescription.articles.length > 0 ? parsedDescription.articles : [{
+      designation: parsedDescription.description || 'Montant de la facture',
+      unite: 'forfait',
+      quantite: 1,
+      prix_unitaire: montantHT,
+      total_ligne: montantHT
+    }];
 
     const items = storedArticles.length > 0 ? storedArticles : [{
       designation: facture.description || 'Montant de la facture',
@@ -328,11 +415,16 @@ const generatePDF = async (req, res, next) => {
       .fontSize(9)
       .fillColor(colors.text)
       .text('RC :', companyBoxX + 10, companyBoxY + 49);
+    const rcFontPath = 'C:/Windows/Fonts/arial.ttf';
+    doc.registerFont('rc-font', rcFontPath);
+
+    const rcText = '14 B0188021';
+
     doc
-      .font('Helvetica')
+      .font('rc-font')
       .fontSize(9)
       .fillColor(colors.muted)
-      .text(COMPANY_INFO.rc, companyBoxX + 35, companyBoxY + 49, { width: companyBoxW - 45 });
+      .text(rcText, companyBoxX + 35, companyBoxY + 49, { width: companyBoxW - 45 });
 
     doc
       .font('Helvetica-Bold')
@@ -343,18 +435,18 @@ const generatePDF = async (req, res, next) => {
       .font('Helvetica')
       .fontSize(9)
       .fillColor(colors.muted)
-      .text(COMPANY_INFO.nif, companyBoxX + 35, companyBoxY + 62, { width: companyBoxW - 45 });
+      .text('001406018802120', companyBoxX + 35, companyBoxY + 62, { width: companyBoxW - 45 });
 
     doc
       .font('Helvetica-Bold')
       .fontSize(9)
       .fillColor(colors.text)
-      .text('AI :', companyBoxX + 10, companyBoxY + 75);
+      .text('NIS :', companyBoxX + 10, companyBoxY + 75);
     doc
       .font('Helvetica')
       .fontSize(9)
       .fillColor(colors.muted)
-      .text(COMPANY_INFO.ai, companyBoxX + 35, companyBoxY + 75, { width: companyBoxW - 45 });
+      .text('0 014 0633 00075 61', companyBoxX + 35, companyBoxY + 75, { width: companyBoxW - 45 });
 
     doc
       .font('Helvetica-Bold')
@@ -533,8 +625,10 @@ const generatePDF = async (req, res, next) => {
         .text(value, totalsX + 100, y, { width: 100, align: 'right' });
     };
 
-    totalLine('Montant H.T.', formatPrice(montantHT) + ' DA', totalsY + 14);
-    totalLine(`TVA (0%)`, formatPrice(montantTVA) + ' DA', totalsY + 34);
+    const safeTotalValue = Number.isFinite(montantHT) ? montantHT : 0;
+
+    totalLine('Montant H.T.', formatPrice(safeTotalValue) + ' DA', totalsY + 14);
+    totalLine(`TVA (${Number(parsedDescription.tva) || 0}%)`, formatPrice(montantTVA) + ' DA', totalsY + 34);
 
     doc
       .moveTo(totalsX + 10, totalsY + 54)
@@ -604,6 +698,8 @@ const generatePDF = async (req, res, next) => {
 };
 
 module.exports = {
+  parseFactureDescription,
+  calculateInvoiceTotal,
   listFactures,
   getFacture,
   createFacture,
