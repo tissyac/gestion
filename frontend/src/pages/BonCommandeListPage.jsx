@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { bonCommandeService } from '../services/api';
-import { ArrowLeft, FileDown, Trash2, Plus } from 'lucide-react';
+import { ArrowLeft, Eye, FileDown, Trash2, Plus } from 'lucide-react';
 
 export default function BonCommandeListPage() {
   const navigate = useNavigate();
@@ -55,6 +55,22 @@ export default function BonCommandeListPage() {
       alert('Erreur lors du téléchargement');
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const handleView = async (bonId) => {
+    const previewWindow = window.open('', '_blank');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/bons-commande/${bonId}/pdf`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (!response.ok) throw new Error('Erreur de visualisation');
+      const url = window.URL.createObjectURL(await response.blob());
+      if (previewWindow) previewWindow.location.href = url;
+    } catch (error) {
+      previewWindow?.close();
+      console.error('Erreur:', error);
+      alert('Erreur lors de la visualisation');
     }
   };
 
@@ -116,7 +132,6 @@ export default function BonCommandeListPage() {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Numéro</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Fournisseur</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Montant</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Statut</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
                 <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">Actions</th>
               </tr>
@@ -127,10 +142,12 @@ export default function BonCommandeListPage() {
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{b.numero}</td>
                   <td className="px-6 py-4 text-sm text-gray-700">{b.fournisseur || '-'}</td>
                   <td className="px-6 py-4 text-sm font-semibold text-gray-900">{Number(b.montant || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} DA</td>
-                  <td className="px-6 py-4 text-sm"><span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">{b.statut}</span></td>
                   <td className="px-6 py-4 text-sm text-gray-700">{new Date(b.created_at).toLocaleDateString('fr-FR')}</td>
                   <td className="px-6 py-4 text-sm">
                     <div className="flex justify-center gap-3">
+                      <button onClick={() => handleView(b.id)} className="p-2 text-blue-600 hover:bg-blue-50 rounded transition" title="Visualiser le PDF">
+                        <Eye size={18} />
+                      </button>
                       <button onClick={() => handleDownload(b.id, b.numero)} disabled={downloading === b.id} className="p-2 text-green-600 hover:bg-green-50 rounded transition disabled:opacity-50" title="Télécharger PDF">
                         <FileDown size={18} />
                       </button>
