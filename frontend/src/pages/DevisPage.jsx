@@ -312,7 +312,7 @@ export default function DevisPage() {
           {/* Section Articles */}
           <div className="card">
             <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-500">
-              Articles
+              Articles - version corrigee
             </h3>
 
             <div className="overflow-x-auto">
