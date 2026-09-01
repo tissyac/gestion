@@ -9,7 +9,7 @@
  */
 
 import React, { useState } from 'react';
-import { Plus, Trash2, Copy, FileText } from 'lucide-react';
+import { Plus, Trash2, FileText, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { devisService } from '../services/api';
@@ -488,10 +488,11 @@ export default function DevisPage() {
             </button>
             <button
               type="button"
+              onClick={() => navigate('/devis-list')}
               className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition-colors"
             >
-              <Copy size={20} />
-              Générer PDF
+              <List size={20} />
+              Voir les devis
             </button>
           </div>
         </form>
