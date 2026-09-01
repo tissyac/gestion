@@ -44,15 +44,23 @@ jobs:
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       run: |
+        if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_PROJECT_ID" ] || [ -z "$VERCEL_ORG_ID" ]; then
+          echo "Secrets Vercel absents: déploiement ignoré."
+          exit 0
+        fi
         npm install -g vercel
-        vercel --prod --token $VERCEL_TOKEN
+        vercel --prod --token "$VERCEL_TOKEN" --yes
       if: github.ref == 'refs/heads/main'
 
     - name: Deploy Backend to Render
       env:
         RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
       run: |
-        curl "$RENDER_DEPLOY_HOOK"
+        if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+          echo "Secret Render absent: déploiement ignoré."
+          exit 0
+        fi
+        curl --fail --show-error "$RENDER_DEPLOY_HOOK"
       if: github.ref == 'refs/heads/main' && success()
 
     - name: Notify deployment
