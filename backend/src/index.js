@@ -34,15 +34,6 @@ const app = express();
 
 // ===== INITIALISATION BASE DE DONNÉES =====
 console.log('\n🔧 Initialisation de la base de données...');
-(async () => {
-  try {
-    await initDatabase();
-    testConnection();
-  } catch (err) {
-    console.error('❌ Échec de l\'initialisation de la base:', err.message);
-    process.exit(1);
-  }
-})();
 
 // ===== CONFIGURATION SÉCURITÉ =====
 app.use(helmet());
@@ -108,10 +99,21 @@ app.use(errorHandler);
 // ===== DÉMARRAGE DU SERVEUR =====
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`✅ Serveur démarré sur le port ${PORT}`);
-  console.log(`📝 Mode: ${process.env.NODE_ENV}`);
-  console.log(`🌐 CORS Origin: ${process.env.CORS_ORIGIN}`);
-});
+const startServer = async () => {
+  try {
+    await initDatabase();
+    testConnection();
+    app.listen(PORT, () => {
+      console.log(`✅ Serveur démarré sur le port ${PORT}`);
+      console.log(`📝 Mode: ${process.env.NODE_ENV}`);
+      console.log(`🌐 CORS Origin: ${process.env.CORS_ORIGIN}`);
+    });
+  } catch (err) {
+    console.error('❌ Échec de l\'initialisation de la base:', err.message);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 module.exports = app;

@@ -21,7 +21,7 @@ export const useAuthStore = create((set) => ({
   login: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await authService.login(email, password);
+      const response = await authService.login(email.trim(), password);
       const { token, user } = response;
 
       localStorage.setItem('token', token);
