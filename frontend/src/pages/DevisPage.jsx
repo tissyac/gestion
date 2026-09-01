@@ -316,11 +316,11 @@ export default function DevisPage() {
             </h3>
 
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full table-fixed">
                 <thead>
                   <tr className="border-b-2 border-gray-300 bg-gray-50">
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-12">N°</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 flex-1">Désignation</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Désignation</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-24">Unité</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-24">Quantité</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-32">Prix Unitaire (DA)</th>
