@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [20.x]
 
     steps:
     - uses: actions/checkout@v3
@@ -22,24 +22,21 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - name: Install and build Frontend
-      run: |
-        cd frontend
-        npm install
-        npm run build
-        cd ..
+    - name: Install Frontend dependencies
+      run: npm ci
+      working-directory: frontend
+
+    - name: Build Frontend
+      run: npm run build
+      working-directory: frontend
 
     - name: Install Backend dependencies
-      run: |
-        cd backend
-        npm install
-        cd ..
+      run: npm ci
+      working-directory: backend
 
     - name: Run tests (if any)
-      run: |
-        cd backend
-        npm test --if-present
-        cd ..
+      run: npm test --if-present
+      working-directory: backend
 
     - name: Deploy Frontend to Vercel
       env:
