@@ -30,7 +30,7 @@ export const useAuthStore = create((set) => ({
       set({ user, token, isLoading: false });
       return true;
     } catch (error) {
-      const errorMsg = error.message || 'Erreur de connexion';
+      const errorMsg = error?.message || error?.data?.message || error?.response?.data?.message || (typeof error === 'string' ? error : 'Erreur de connexion');
       set({ error: errorMsg, isLoading: false });
       return false;
     }
@@ -49,7 +49,7 @@ export const useAuthStore = create((set) => ({
       set({ user, token, isLoading: false });
       return true;
     } catch (error) {
-      const errorMsg = error.message || 'Erreur lors de l\'inscription';
+      const errorMsg = error?.message || error?.data?.message || error?.response?.data?.message || (typeof error === 'string' ? error : 'Erreur lors de l\'inscription');
       set({ error: errorMsg, isLoading: false });
       return false;
     }

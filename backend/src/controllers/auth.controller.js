@@ -22,7 +22,8 @@ const { query } = require('../config/database');
  */
 const register = async (req, res, next) => {
   try {
-    const { nom, prenom, email, password, passwordConfirm } = req.body;
+    const { nom, prenom, email: rawEmail, password, passwordConfirm } = req.body;
+    const email = rawEmail?.trim().toLowerCase();
 
     // Validation basique
     if (!email || !password || !passwordConfirm) {
@@ -39,7 +40,7 @@ const register = async (req, res, next) => {
 
     // Vérifie si l'utilisateur existe déjà
     const userExists = query(
-      'SELECT email FROM users WHERE email = ?',
+      'SELECT email FROM users WHERE lower(trim(email)) = ?',
       [email]
     );
 
@@ -103,7 +104,8 @@ const register = async (req, res, next) => {
  */
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email: rawEmail, password } = req.body;
+    const email = rawEmail?.trim().toLowerCase();
 
     // Validation
     if (!email || !password) {
@@ -112,7 +114,7 @@ const login = async (req, res, next) => {
 
     // Récupère l'utilisateur
     const result = query(
-      'SELECT * FROM users WHERE email = ?',
+      'SELECT * FROM users WHERE lower(trim(email)) = ?',
       [email]
     );
 
