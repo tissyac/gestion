@@ -214,7 +214,7 @@ export default function BonVersionmentPage() {
           <div className="card">
             <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-blue-500">Articles</h3>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[900px]">
                 <thead>
                   <tr className="border-b-2 border-gray-300 bg-gray-50">
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-12">N°</th>
@@ -237,6 +237,8 @@ export default function BonVersionmentPage() {
                         </td>
                         <td className="px-4 py-3">
                           <select value={article.unite || 'pièce'} onChange={(e) => handleArticleChange(index, 'unite', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="pièce">Pièce</option><option value="m²">m²</option><option value="ml">ml</option><option value="kg">kg</option><option value="heure">Heure</option><option value="forfait">Forfait</option></select>
+                        </td>
+                        <td className="px-4 py-3">
                           <input type="number" step="0.0001" min="0" value={article.quantite} onChange={(e) => handleArticleChange(index, 'quantite', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
                         </td>
                         <td className="px-4 py-3">
