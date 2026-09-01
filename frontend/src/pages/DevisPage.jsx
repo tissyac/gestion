@@ -354,7 +354,8 @@ export default function DevisPage() {
                           />
                         </td>
                         <td className="px-2 py-2">
-                          <select aria-label="Unité" value={article.unite || 'pièce'} onChange={(e) => handleArticleChange(index, 'unite', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                          <label className="sr-only" htmlFor={`devis-unite-${index}`}>Choisir une unité</label>
+                          <select id={`devis-unite-${index}`} aria-label="Choisir une unité" value={article.unite || 'pièce'} onChange={(e) => handleArticleChange(index, 'unite', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                             <option value="pièce">Pièce</option>
                             <option value="m²">m²</option>
                             <option value="ml">ml</option>
@@ -364,7 +365,9 @@ export default function DevisPage() {
                           </select>
                         </td>
                         <td className="px-4 py-3">
+                          <label className="sr-only" htmlFor={`devis-quantite-${index}`}>Saisir une quantité</label>
                           <input
+                            id={`devis-quantite-${index}`}
                             type="number"
                             step="0.0001"
                             min="0"
