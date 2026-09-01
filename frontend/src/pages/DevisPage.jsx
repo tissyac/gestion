@@ -316,22 +316,13 @@ export default function DevisPage() {
             </h3>
 
             <div className="overflow-x-auto">
-              <table className="w-full table-fixed">
-                <colgroup>
-                  <col className="w-12" />
-                  <col />
-                  <col className="w-24" />
-                  <col className="w-24" />
-                  <col className="w-32" />
-                  <col className="w-32" />
-                  <col className="w-12" />
-                </colgroup>
+              <table className="w-full min-w-[900px]">
                 <thead>
                   <tr className="border-b-2 border-gray-300 bg-gray-50">
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-12">N°</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Désignation</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Unité (choisir)</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Quantité (nombre)</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-24">Unité</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-24">Quantité</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-32">Prix Unitaire (DA)</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-32">Total (DA)</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-12">Action</th>
