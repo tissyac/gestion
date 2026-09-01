@@ -9,6 +9,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useAuthStore } from '../context/authStore';
+import { COMPANY_BRAND } from '../config/company';
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
@@ -25,9 +26,10 @@ export default function Layout({ children }) {
       {/* Sidebar */}
       <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white transition-all duration-300 overflow-hidden`}>
         <div className="p-4 border-b border-gray-700">
-          <h1 className={`text-xl font-bold ${!sidebarOpen && 'text-center'}`}>
-            {sidebarOpen ? 'ERP Commerce' : 'E'}
-          </h1>
+          <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'}`}>
+            <img src={COMPANY_BRAND.logoUrl} alt={COMPANY_BRAND.name} className="h-10 w-10 rounded-lg bg-white object-contain p-1" />
+            {sidebarOpen && <div><h1 className="text-lg font-bold leading-tight">{COMPANY_BRAND.name}</h1><p className="text-xs text-gray-400">Gestion commerciale</p></div>}
+          </div>
         </div>
 
         <nav className="p-4 space-y-2">

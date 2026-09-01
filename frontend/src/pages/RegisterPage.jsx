@@ -11,6 +11,7 @@ import { useAuthStore } from '../context/authStore';
 import FormInput from '../components/FormInput';
 import Alert from '../components/Alert';
 import Loading from '../components/Loading';
+import { COMPANY_BRAND } from '../config/company';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -47,7 +48,9 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">Inscription</h1>
+        <img src={COMPANY_BRAND.logoUrl} alt={COMPANY_BRAND.name} className="mx-auto mb-4 h-24 w-44 object-contain" />
+        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">{COMPANY_BRAND.name}</h1>
+        <h2 className="text-xl font-semibold text-gray-900 text-center">Inscription</h2>
         <p className="text-gray-600 text-center mb-8">Créer un nouveau compte</p>
 
         {error && <Alert type="error" message={error} />}
