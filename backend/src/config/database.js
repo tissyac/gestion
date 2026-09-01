@@ -105,12 +105,13 @@ function query(sql, params = []) {
     }
 
     const result = statement.run();
+    const rowCount = db.getRowsModified ? db.getRowsModified() : 0;
     statement.free();
     saveDatabase();
 
     return {
       rows: [],
-      rowCount: db.getRowsModified ? db.getRowsModified() : 0
+      rowCount
     };
   } catch (err) {
     console.error('❌ Erreur requête SQL:', err.message);
