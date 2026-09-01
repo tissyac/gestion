@@ -245,7 +245,9 @@ async function ensureAdminUser() {
 
   const existing = query('SELECT id FROM users WHERE email = ?', [email]);
   if (existing.rows.length > 0) {
-    query('UPDATE users SET role = ? WHERE email = ?', ['ADMIN', email]);
+    const passwordHash = await bcrypt.hash(password, 10);
+    query('UPDATE users SET role = ?, password = ? WHERE email = ?', ['ADMIN', passwordHash, email]);
+    console.log(`✅ Compte administrateur mis à jour: ${email}`);
     return;
   }
 
