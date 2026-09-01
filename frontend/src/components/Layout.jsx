@@ -27,7 +27,9 @@ export default function Layout({ children }) {
       <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white transition-all duration-300 overflow-hidden`}>
         <div className="p-4 border-b border-gray-700">
           <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'}`}>
-            <img src={COMPANY_BRAND.logoUrl} alt={COMPANY_BRAND.name} className="h-10 w-10 rounded-lg bg-white object-contain p-1" />
+            <span className="flex h-10 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
+              <img src={COMPANY_BRAND.logoUrl} alt={COMPANY_BRAND.name} className="h-full w-full object-cover" />
+            </span>
             {sidebarOpen && <div><h1 className="text-lg font-bold leading-tight">{COMPANY_BRAND.name}</h1><p className="text-xs text-gray-400">Gestion commerciale</p></div>}
           </div>
         </div>

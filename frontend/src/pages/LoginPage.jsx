@@ -30,7 +30,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
-        <img src={COMPANY_BRAND.logoUrl} alt={COMPANY_BRAND.name} className="mx-auto mb-4 h-24 w-44 object-contain" />
+        <div className="mx-auto mb-4 h-24 w-56 overflow-hidden rounded-lg bg-white">
+          <img src={COMPANY_BRAND.logoUrl} alt={COMPANY_BRAND.name} className="h-full w-full object-cover" />
+        </div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">{COMPANY_BRAND.name}</h1>
         <p className="text-gray-600 text-center mb-8">Gestion commerciale</p>
 
