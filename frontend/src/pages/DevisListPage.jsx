@@ -145,14 +145,14 @@ export default function DevisListPage() {
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full">
+          <table className="w-full table-fixed text-xs sm:text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Numéro</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Client</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Montant T.T.C.</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
-                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">Actions</th>
+                <th className="px-2 py-3 text-left text-sm font-semibold text-gray-900 sm:px-6">Numéro</th>
+                <th className="hidden px-2 py-3 text-left text-sm font-semibold text-gray-900 sm:table-cell sm:px-6">Client</th>
+                <th className="px-2 py-3 text-left text-sm font-semibold text-gray-900 sm:px-6">Montant T.T.C.</th>
+                <th className="px-2 py-3 text-left text-sm font-semibold text-gray-900 sm:px-6">Date</th>
+                <th className="px-2 py-3 text-center text-sm font-semibold text-gray-900 sm:px-6">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -162,17 +162,17 @@ export default function DevisListPage() {
 
                 return (
                   <tr key={idx} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{d.numero}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
+                    <td className="px-2 py-4 text-sm font-medium text-gray-900 sm:px-6">{d.numero}</td>
+                    <td className="hidden px-2 py-4 text-sm text-gray-700 sm:table-cell sm:px-6">
                       {d.client_prenom} {d.client_nom}
                     </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                    <td className="px-2 py-4 text-sm font-semibold text-gray-900 sm:px-6">
                       {montantTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} DA
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
+                    <td className="px-2 py-4 text-sm text-gray-700 sm:px-6">
                       {new Date(d.created_at).toLocaleDateString('fr-FR')}
                     </td>
-                    <td className="px-6 py-4 text-sm">
+                    <td className="px-2 py-4 text-sm sm:px-6">
                       <div className="flex justify-center gap-3">
                         <button
                           onClick={() => handleView(d.id)}

@@ -126,24 +126,24 @@ export default function BonCommandeListPage() {
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full">
+          <table className="w-full table-fixed text-xs sm:text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Numéro</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Fournisseur</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Montant</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
-                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">Actions</th>
+                <th className="px-2 py-3 text-left text-sm font-semibold text-gray-900 sm:px-6">Numéro</th>
+                <th className="hidden px-2 py-3 text-left text-sm font-semibold text-gray-900 sm:table-cell sm:px-6">Fournisseur</th>
+                <th className="px-2 py-3 text-left text-sm font-semibold text-gray-900 sm:px-6">Montant</th>
+                <th className="px-2 py-3 text-left text-sm font-semibold text-gray-900 sm:px-6">Date</th>
+                <th className="px-2 py-3 text-center text-sm font-semibold text-gray-900 sm:px-6">Actions</th>
               </tr>
             </thead>
             <tbody>
               {bons.map((b) => (
                 <tr key={b.id} className="border-b hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{b.numero}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{b.fournisseur || '-'}</td>
-                  <td className="px-6 py-4 text-sm font-semibold text-gray-900">{Number(b.montant || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} DA</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{new Date(b.created_at).toLocaleDateString('fr-FR')}</td>
-                  <td className="px-6 py-4 text-sm">
+                  <td className="px-2 py-4 text-sm font-medium text-gray-900 sm:px-6">{b.numero}</td>
+                  <td className="hidden px-2 py-4 text-sm text-gray-700 sm:table-cell sm:px-6">{b.fournisseur || '-'}</td>
+                  <td className="px-2 py-4 text-sm font-semibold text-gray-900 sm:px-6">{Number(b.montant || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} DA</td>
+                  <td className="px-2 py-4 text-sm text-gray-700 sm:px-6">{new Date(b.created_at).toLocaleDateString('fr-FR')}</td>
+                  <td className="px-2 py-4 text-sm sm:px-6">
                     <div className="flex justify-center gap-3">
                       <button onClick={() => handleView(b.id)} className="p-2 text-blue-600 hover:bg-blue-50 rounded transition" title="Visualiser le PDF">
                         <Eye size={18} />
