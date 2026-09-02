@@ -35,11 +35,16 @@ async function initDatabase() {
 
   if (!db) {
     const exists = fs.existsSync(dbPath);
+    console.log(`📁 Chemin base de données: ${dbPath}`);
+    console.log(`📊 Fichier existant: ${exists ? 'OUI' : 'NON'}`);
+    
     if (exists) {
       const fileBuffer = fs.readFileSync(dbPath);
       db = new SQL.Database(new Uint8Array(fileBuffer));
+      console.log(`✅ Base de données chargée (${Math.round(fileBuffer.length / 1024)} KB)`);
     } else {
       db = new SQL.Database();
+      console.log('✨ Nouvelle base de données créée');
     }
 
     db.run('PRAGMA foreign_keys = ON;');
@@ -54,8 +59,25 @@ async function initDatabase() {
  */
 function saveDatabase() {
   if (!db) return;
+  try {
+    const dataDir = path.dirname(dbPath);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+  } catch (err) {
+    console.error('❌ Erreur création dossier data:', err.message);
+    return false;
+  }
+
   const data = db.export();
-  fs.writeFileSync(dbPath, Buffer.from(data));
+  try {
+    fs.writeFileSync(dbPath, Buffer.from(data));
+    console.log(`✅ Base de données sauvegardée (${Math.round(Buffer.byteLength(data) / 1024)} KB)`);
+    return true;
+  } catch (err) {
+    console.error('❌ Erreur sauvegarde base de données:', err.message);
+    return false;
+  }
 }
 
 /**
