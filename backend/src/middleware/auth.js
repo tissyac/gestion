@@ -8,6 +8,7 @@
 
 const jwt = require('jsonwebtoken');
 const { AppError } = require('./errorHandler');
+const { query } = require('../config/database');
 
 /**
  * Middleware pour vérifier le token JWT
@@ -15,7 +16,7 @@ const { AppError } = require('./errorHandler');
  * @param {Object} res - Réponse Express
  * @param {Function} next - Fonction next
  */
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   try {
     // Récupère le token du header Authorization
     const token = req.headers.authorization?.split(' ')[1];
@@ -27,8 +28,20 @@ const verifyToken = (req, res, next) => {
     // Vérifie le token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Stocke l'utilisateur dans la requête
-    req.user = decoded;
+    const result = await query(
+      'SELECT id, email, nom, prenom, role, is_active FROM users WHERE id = ?',
+      [decoded.id]
+    );
+
+    if (result.rows.length === 0 || result.rows[0].is_active === false) {
+      throw new AppError('Session invalide. Veuillez vous reconnecter.', 401);
+    }
+
+    // Use the current database user so role changes and new accounts are reflected.
+    req.user = {
+      ...decoded,
+      ...result.rows[0]
+    };
     
     next();
   } catch (err) {
