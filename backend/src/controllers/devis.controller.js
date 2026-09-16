@@ -26,7 +26,7 @@ const listDevis = async (req, res, next) => {
     const limit = Math.min(100, parseInt(req.query.limit) || 20);
     const offset = (page - 1) * limit;
 
-    const result = query(
+    const result = await query(
       `SELECT 
         d.*,
         COALESCE(SUM(da.quantite * da.prix_unitaire), 0) as montant_ht
@@ -38,8 +38,8 @@ const listDevis = async (req, res, next) => {
       [limit, offset]
     );
 
-    const countResult = query('SELECT COUNT(*) as count FROM devis WHERE user_id = ?', [req.user.id]);
-    const total = countResult.rows[0]?.count || 0;
+    const countResult = await query('SELECT COUNT(*) as count FROM devis WHERE user_id = ?', [req.user.id]);
+    const total = Number(countResult.rows[0]?.count || 0);
 
     // Calcule les totaux TTC pour chaque devis
     const devisList = result.rows.map(devis => ({
@@ -71,7 +71,7 @@ const getDevis = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const devisResult = query(
+    const devisResult = await query(
       'SELECT * FROM devis WHERE id = ?',
       [id]
     );
@@ -83,7 +83,7 @@ const getDevis = async (req, res, next) => {
     const devis = devisResult.rows[0];
 
     // Récupère les articles du devis
-    const articlesResult = query(
+    const articlesResult = await query(
       `SELECT id, numero_ligne, designation, unite, quantite, prix_unitaire,
               (quantite * prix_unitaire) as total_ligne
        FROM devis_articles 
@@ -133,7 +133,7 @@ const createDevis = async (req, res, next) => {
     }
 
     // Vérifie que le numéro est unique
-    const existingDevis = query(
+    const existingDevis = await query(
       'SELECT numero FROM devis WHERE numero = ?',
       [numero]
     );
@@ -147,7 +147,7 @@ const createDevis = async (req, res, next) => {
     const devisDate = date_devis || new Date().toISOString().slice(0, 10);
 
     // Crée le devis
-    query(
+    await query(
       `INSERT INTO devis (
         id, numero, client_nom, client_prenom, client_adresse, client_telephone, client_email, date_devis,
         tva, statut, created_at, updated_at, user_id
@@ -159,13 +159,13 @@ const createDevis = async (req, res, next) => {
     );
 
     // Ajoute les articles du devis
-    articles.forEach((article, index) => {
+    for (const [index, article] of articles.entries()) {
       if (!article.designation || article.quantite === undefined || article.prix_unitaire === undefined) {
         throw new AppError('Chaque article doit avoir: designation, quantite, prix_unitaire', 400);
       }
 
       const articleId = uuidv4();
-      query(
+      await query(
         `INSERT INTO devis_articles (
           id, devis_id, numero_ligne, designation, unite, quantite, prix_unitaire
         ) VALUES (?, ?, ?, ?, ?, ?, ?)` ,
@@ -174,10 +174,10 @@ const createDevis = async (req, res, next) => {
           parseFloat(article.quantite), parseFloat(article.prix_unitaire)
         ]
       );
-    });
+    }
 
     // Récupère le devis complet créé
-    const newDevisResult = query('SELECT * FROM devis WHERE id = ?', [id]);
+    const newDevisResult = await query('SELECT * FROM devis WHERE id = ?', [id]);
     const newDevis = newDevisResult.rows[0];
 
     res.status(201).json({
@@ -199,7 +199,7 @@ const updateDevis = async (req, res, next) => {
     const { numero, date_devis, client_nom, client_prenom, client_adresse, client_telephone, client_email, articles, tva, statut } = req.body;
 
     // Vérifie que le devis existe
-    const existingDevis = query(
+    const existingDevis = await query(
       'SELECT * FROM devis WHERE id = ?',
       [id]
     );
@@ -253,7 +253,7 @@ const updateDevis = async (req, res, next) => {
       updates.push(`updated_at = datetime('now')`);
       values.push(id);
 
-      query(
+      await query(
         `UPDATE devis SET ${updates.join(', ')} WHERE id = ?`,
         values
       );
@@ -262,16 +262,16 @@ const updateDevis = async (req, res, next) => {
     // Mise à jour des articles si fournis
     if (articles && Array.isArray(articles)) {
       // Supprime les anciens articles
-      query('DELETE FROM devis_articles WHERE devis_id = ?', [id]);
+      await query('DELETE FROM devis_articles WHERE devis_id = ?', [id]);
 
       // Ajoute les nouveaux articles
-      articles.forEach((article, index) => {
+      for (const [index, article] of articles.entries()) {
         if (!article.designation || article.quantite === undefined || article.prix_unitaire === undefined) {
           throw new AppError('Chaque article doit avoir: designation, quantite, prix_unitaire', 400);
         }
 
         const articleId = uuidv4();
-        query(
+        await query(
           `INSERT INTO devis_articles (
             id, devis_id, numero_ligne, designation, unite, quantite, prix_unitaire
           ) VALUES (?, ?, ?, ?, ?, ?, ?)` ,
@@ -280,11 +280,11 @@ const updateDevis = async (req, res, next) => {
             parseFloat(article.quantite), parseFloat(article.prix_unitaire)
           ]
         );
-      });
+      }
     }
 
     // Récupère le devis mis à jour
-    const updatedDevisResult = query('SELECT * FROM devis WHERE id = ?', [id]);
+    const updatedDevisResult = await query('SELECT * FROM devis WHERE id = ?', [id]);
     const updatedDevis = updatedDevisResult.rows[0];
 
     res.json({
@@ -305,10 +305,10 @@ const deleteDevis = async (req, res, next) => {
     const { id } = req.params;
 
     // Supprime les articles
-    query('DELETE FROM devis_articles WHERE devis_id = ?', [id]);
+    await query('DELETE FROM devis_articles WHERE devis_id = ?', [id]);
 
     // Supprime le devis
-    const result = query(
+    const result = await query(
       'DELETE FROM devis WHERE id = ?',
       [id]
     );
@@ -334,13 +334,13 @@ const generatePDF = async (req, res, next) => {
     const { id } = req.params;
     const PDFDocument = require('pdfkit');
 
-    const devisResult = query('SELECT * FROM devis WHERE id = ?', [id]);
+    const devisResult = await query('SELECT * FROM devis WHERE id = ?', [id]);
     if (devisResult.rows.length === 0) {
       throw new AppError('Devis non trouvé', 404);
     }
 
     const devis = devisResult.rows[0];
-    const articlesResult = query(
+    const articlesResult = await query(
       `SELECT id, numero_ligne, designation, unite, quantite, prix_unitaire,
               (quantite * prix_unitaire) as total_ligne
        FROM devis_articles WHERE devis_id = ? ORDER BY numero_ligne ASC`,

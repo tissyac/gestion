@@ -1,263 +1,142 @@
-/**
- * Configuration de la base de données
- * ====================================
- * 
- * Utilise sql.js pour un stockage SQLite léger sans compilation native.
- */
-
-const initSqlJs = require('sql.js');
 const bcrypt = require('bcryptjs');
-const fs = require('fs');
-const path = require('path');
+const { Pool } = require('pg');
+const { v4: uuidv4 } = require('uuid');
 
-const configuredDbPath = process.env.DB_PATH || './data/erp.db';
-const dbPath = path.resolve(__dirname, '../..', configuredDbPath);
+const databaseUrl = process.env.DATABASE_URL;
+const environment = (process.env.NODE_ENV || '').toLowerCase();
+const isLocalEnvironment = ['development', 'local', 'test'].includes(environment);
+const useSsl = databaseUrl && (!isLocalEnvironment || process.env.PGSSL === 'true');
 
-// Crée le dossier data s'il n'existe pas
-const dataDir = path.dirname(dbPath);
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+const pool = databaseUrl
+  ? new Pool({
+      connectionString: databaseUrl,
+      ...(useSsl ? { ssl: { rejectUnauthorized: false } } : {})
+    })
+  : null;
+
+if (pool) {
+  pool.on('error', (error) => {
+    console.error('Unexpected PostgreSQL pool error:', error.message);
+  });
 }
 
-const sqlJsDistPath = path.dirname(require.resolve('sql.js'));
-let db = null;
-let SQL = null;
+function translatePlaceholders(sql) {
+  let parameterIndex = 0;
 
-/**
- * Charge ou initialise la base de données SQLite
- */
+  return sql
+    .replace(/\?/g, () => `$${++parameterIndex}`)
+    .replace(/datetime\(\s*['"]now['"]\s*\)/gi, 'NOW()');
+}
+
+async function query(sql, params = []) {
+  if (!pool) {
+    throw new Error('PostgreSQL pool is unavailable. Set DATABASE_URL before querying the database.');
+  }
+
+  const result = await pool.query(translatePlaceholders(sql), params);
+  return { rows: result.rows, rowCount: result.rowCount };
+}
+
 async function initDatabase() {
-  if (!SQL) {
-    SQL = await initSqlJs({
-      locateFile: file => path.join(sqlJsDistPath, file)
-    });
+  if (!pool) {
+    throw new Error('PostgreSQL pool is unavailable. Set DATABASE_URL before initializing the database.');
   }
 
-  if (!db) {
-    const exists = fs.existsSync(dbPath);
-    console.log(`📁 Chemin base de données: ${dbPath}`);
-    console.log(`📊 Fichier existant: ${exists ? 'OUI' : 'NON'}`);
-    
-    if (exists) {
-      const fileBuffer = fs.readFileSync(dbPath);
-      db = new SQL.Database(new Uint8Array(fileBuffer));
-      console.log(`✅ Base de données chargée (${Math.round(fileBuffer.length / 1024)} KB)`);
-    } else {
-      db = new SQL.Database();
-      console.log('✨ Nouvelle base de données créée');
-    }
+  const client = await pool.connect();
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY, nom TEXT, prenom TEXT, email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL, role TEXT DEFAULT 'USER', is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS devis (
+      id TEXT PRIMARY KEY, numero TEXT UNIQUE NOT NULL, client_nom TEXT NOT NULL,
+      client_prenom TEXT NOT NULL, client_adresse TEXT, client_telephone TEXT NOT NULL,
+      client_email TEXT, date_devis TEXT, tva NUMERIC(5, 2) DEFAULT 0,
+      statut TEXT DEFAULT 'BROUILLON', user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS devis_articles (
+      id TEXT PRIMARY KEY, devis_id TEXT NOT NULL REFERENCES devis(id) ON DELETE CASCADE,
+      numero_ligne INTEGER NOT NULL, designation TEXT NOT NULL, unite TEXT DEFAULT 'piece',
+      quantite NUMERIC(10, 2) NOT NULL, prix_unitaire NUMERIC(12, 2) NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(), UNIQUE (devis_id, numero_ligne)
+    )`,
+    `CREATE TABLE IF NOT EXISTS factures (
+      id TEXT PRIMARY KEY, numero TEXT UNIQUE NOT NULL, client TEXT NOT NULL,
+      montant NUMERIC(12, 2) NOT NULL, description TEXT, statut TEXT DEFAULT 'EN_ATTENTE',
+      date_facture TIMESTAMP DEFAULT NOW(), date_echeance TIMESTAMP,
+      montant_paye NUMERIC(12, 2) DEFAULT 0,
+      user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS bons_commande (
+      id TEXT PRIMARY KEY, numero TEXT UNIQUE NOT NULL, fournisseur TEXT NOT NULL,
+      montant NUMERIC(12, 2) NOT NULL, description TEXT, statut TEXT DEFAULT 'EN_ATTENTE',
+      date_commande TIMESTAMP DEFAULT NOW(), date_livraison TIMESTAMP,
+      user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS bons_versement (
+      id TEXT PRIMARY KEY, numero TEXT UNIQUE NOT NULL, montant NUMERIC(12, 2) NOT NULL,
+      description TEXT, statut TEXT DEFAULT 'EN_ATTENTE', date_versement TIMESTAMP DEFAULT NOW(),
+      date_reception TIMESTAMP, beneficiaire_nom TEXT, beneficiaire_prenom TEXT,
+      beneficiaire_entreprise TEXT, beneficiaire_adresse TEXT, beneficiaire_telephone TEXT,
+      beneficiaire_email TEXT, mode_paiement TEXT, objet TEXT, reference TEXT, banque TEXT,
+      numero_piece TEXT, observation TEXT, total_global NUMERIC(12, 2),
+      montant_verse NUMERIC(12, 2), montant_reste NUMERIC(12, 2),
+      user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW()
+    )`,
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'USER'",
+    'ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE',
+    'ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()',
+    'ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()',
+    'ALTER TABLE devis ADD COLUMN IF NOT EXISTS client_email TEXT',
+    'ALTER TABLE devis ADD COLUMN IF NOT EXISTS date_devis TEXT',
+    "ALTER TABLE devis_articles ADD COLUMN IF NOT EXISTS unite TEXT DEFAULT 'piece'",
+    'ALTER TABLE factures ADD COLUMN IF NOT EXISTS date_echeance TIMESTAMP',
+    'ALTER TABLE factures ADD COLUMN IF NOT EXISTS montant_paye NUMERIC(12, 2) DEFAULT 0',
+    'ALTER TABLE bons_commande ADD COLUMN IF NOT EXISTS date_livraison TIMESTAMP',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS beneficiaire_nom TEXT',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS beneficiaire_prenom TEXT',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS beneficiaire_entreprise TEXT',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS beneficiaire_adresse TEXT',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS beneficiaire_telephone TEXT',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS beneficiaire_email TEXT',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS mode_paiement TEXT',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS objet TEXT',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS reference TEXT',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS banque TEXT',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS numero_piece TEXT',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS observation TEXT',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS total_global NUMERIC(12, 2)',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS montant_verse NUMERIC(12, 2)',
+    'ALTER TABLE bons_versement ADD COLUMN IF NOT EXISTS montant_reste NUMERIC(12, 2)',
+    'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+    'CREATE INDEX IF NOT EXISTS idx_devis_statut ON devis(statut)',
+    'CREATE INDEX IF NOT EXISTS idx_devis_user_id ON devis(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_devis_articles_devis_id ON devis_articles(devis_id)',
+    'CREATE INDEX IF NOT EXISTS idx_factures_statut ON factures(statut)',
+    'CREATE INDEX IF NOT EXISTS idx_factures_user_id ON factures(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_bons_commande_statut ON bons_commande(statut)',
+    'CREATE INDEX IF NOT EXISTS idx_bons_commande_user_id ON bons_commande(user_id)',
+    'CREATE INDEX IF NOT EXISTS idx_bons_versement_statut ON bons_versement(statut)',
+    'CREATE INDEX IF NOT EXISTS idx_bons_versement_user_id ON bons_versement(user_id)'
+  ];
 
-    db.run('PRAGMA foreign_keys = ON;');
-    createSchema();
-    await ensureAdminUser();
-    saveDatabase();
-  }
-}
-
-/**
- * Sauvegarde la base de données sur le disque
- */
-function saveDatabase() {
-  if (!db) return;
   try {
-    const dataDir = path.dirname(dbPath);
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-  } catch (err) {
-    console.error('❌ Erreur création dossier data:', err.message);
-    return false;
+    await client.query('BEGIN');
+    for (const statement of statements) await client.query(statement);
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
 
-  const data = db.export();
-  try {
-    fs.writeFileSync(dbPath, Buffer.from(data));
-    console.log(`✅ Base de données sauvegardée (${Math.round(Buffer.byteLength(data) / 1024)} KB)`);
-    return true;
-  } catch (err) {
-    console.error('❌ Erreur sauvegarde base de données:', err.message);
-    return false;
-  }
-}
-
-/**
- * Teste la connexion à la base de données
- */
-function testConnection() {
-  try {
-    if (!db) {
-      throw new Error('Database not initialized');
-    }
-    db.exec('SELECT 1');
-    console.log('✅ Connexion à la base de données SQLite réussie');
-    console.log(`📁 Base de données: ${dbPath}`);
-    return true;
-  } catch (err) {
-    console.error('❌ Erreur de connexion:', err.message);
-    return false;
-  }
-}
-
-/**
- * Exécute une requête SQL avec liaison de paramètres
- */
-function query(sql, params = []) {
-  if (!db) {
-    throw new Error('Database not initialised. Call initDatabase() first.');
-  }
-
-  const modifiedSql = sql
-    .replace(/\$\d+/g, '?')
-    .replace(/\bNOW\(\)/gi, "datetime('now')");
-
-  try {
-    const statement = db.prepare(modifiedSql);
-    statement.bind(params);
-
-    const rows = [];
-    const isSelect = /^\s*SELECT/i.test(modifiedSql);
-
-    if (isSelect) {
-      while (statement.step()) {
-        rows.push(statement.getAsObject());
-      }
-      statement.free();
-      return {
-        rows,
-        rowCount: rows.length
-      };
-    }
-
-    const result = statement.run();
-    const rowCount = db.getRowsModified ? db.getRowsModified() : 0;
-    statement.free();
-    saveDatabase();
-
-    return {
-      rows: [],
-      rowCount
-    };
-  } catch (err) {
-    console.error('❌ Erreur requête SQL:', err.message);
-    throw err;
-  }
-}
-
-/**
- * Initialise les tables de la base de données
- */
-function createSchema() {
-  const schema = `
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      nom TEXT,
-      prenom TEXT,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      role TEXT DEFAULT 'USER',
-      is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT (datetime('now')),
-      updated_at DATETIME DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS devis (
-      id TEXT PRIMARY KEY,
-      numero TEXT UNIQUE NOT NULL,
-      client_nom TEXT NOT NULL,
-      client_prenom TEXT NOT NULL,
-      client_adresse TEXT,
-      client_telephone TEXT NOT NULL,
-      client_email TEXT,
-      date_devis TEXT,
-      tva INTEGER DEFAULT 0,
-      statut TEXT DEFAULT 'BROUILLON',
-      user_id TEXT,
-      created_at DATETIME DEFAULT (datetime('now')),
-      updated_at DATETIME DEFAULT (datetime('now')),
-      FOREIGN KEY(user_id) REFERENCES users(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS devis_articles (
-      id TEXT PRIMARY KEY,
-      devis_id TEXT NOT NULL,
-      numero_ligne INTEGER NOT NULL,
-      designation TEXT NOT NULL,
-      unite TEXT DEFAULT 'pièce',
-      quantite DECIMAL(10, 2) NOT NULL,
-      prix_unitaire DECIMAL(12, 2) NOT NULL,
-      created_at DATETIME DEFAULT (datetime('now')),
-      FOREIGN KEY(devis_id) REFERENCES devis(id) ON DELETE CASCADE,
-      UNIQUE(devis_id, numero_ligne)
-    );
-
-    CREATE TABLE IF NOT EXISTS factures (
-      id TEXT PRIMARY KEY,
-      numero TEXT UNIQUE NOT NULL,
-      client TEXT NOT NULL,
-      montant DECIMAL(12, 2) NOT NULL,
-      description TEXT,
-      statut TEXT DEFAULT 'EN_ATTENTE',
-      date_facture DATETIME DEFAULT (datetime('now')),
-      date_echeance DATETIME,
-      montant_paye DECIMAL(12, 2) DEFAULT 0,
-      user_id TEXT,
-      created_at DATETIME DEFAULT (datetime('now')),
-      updated_at DATETIME DEFAULT (datetime('now')),
-      FOREIGN KEY(user_id) REFERENCES users(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS bons_commande (
-      id TEXT PRIMARY KEY,
-      numero TEXT UNIQUE NOT NULL,
-      fournisseur TEXT NOT NULL,
-      montant DECIMAL(12, 2) NOT NULL,
-      description TEXT,
-      statut TEXT DEFAULT 'EN_ATTENTE',
-      date_commande DATETIME DEFAULT (datetime('now')),
-      date_livraison DATETIME,
-      user_id TEXT,
-      created_at DATETIME DEFAULT (datetime('now')),
-      updated_at DATETIME DEFAULT (datetime('now')),
-      FOREIGN KEY(user_id) REFERENCES users(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS bons_versement (
-      id TEXT PRIMARY KEY,
-      numero TEXT UNIQUE NOT NULL,
-      montant DECIMAL(12, 2) NOT NULL,
-      description TEXT,
-      statut TEXT DEFAULT 'EN_ATTENTE',
-      date_versement DATETIME DEFAULT (datetime('now')),
-      date_reception DATETIME,
-      user_id TEXT,
-      created_at DATETIME DEFAULT (datetime('now')),
-      updated_at DATETIME DEFAULT (datetime('now')),
-      FOREIGN KEY(user_id) REFERENCES users(id)
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_devis_statut ON devis(statut);
-    CREATE INDEX IF NOT EXISTS idx_devis_user_id ON devis(user_id);
-    CREATE INDEX IF NOT EXISTS idx_devis_articles_devis_id ON devis_articles(devis_id);
-    CREATE INDEX IF NOT EXISTS idx_factures_statut ON factures(statut);
-    CREATE INDEX IF NOT EXISTS idx_factures_user_id ON factures(user_id);
-    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-  `;
-
-  db.exec(schema);
-  ensureDevisUnitColumn();
-  ensureDevisEmailColumn();
-  ensureDevisDateColumn();
-  ensureBonVersementColumns();
-  ensureUserRoleColumn();
-}
-
-function ensureUserRoleColumn() {
-  const result = db.exec('PRAGMA table_info(users)');
-  const columns = result[0]?.values || [];
-  if (!columns.some(column => column[1] === 'role')) {
-    db.exec("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'USER'");
-    saveDatabase();
-  }
+  await ensureAdminUser();
 }
 
 async function ensureAdminUser() {
@@ -265,117 +144,40 @@ async function ensureAdminUser() {
   const password = process.env.ADMIN_PASSWORD;
   if (!email || !password) return;
 
-  const existing = query('SELECT id FROM users WHERE email = ?', [email]);
+  const passwordHash = await bcrypt.hash(password, 10);
+  const existing = await query('SELECT id FROM users WHERE email = ?', [email]);
   if (existing.rows.length > 0) {
-    const passwordHash = await bcrypt.hash(password, 10);
-    query('UPDATE users SET role = ?, password = ? WHERE email = ?', ['ADMIN', passwordHash, email]);
-    console.log(`✅ Compte administrateur mis à jour: ${email}`);
+    await query(
+      'UPDATE users SET role = ?, password = ?, updated_at = NOW() WHERE email = ?',
+      ['ADMIN', passwordHash, email]
+    );
     return;
   }
 
-  const { v4: uuidv4 } = require('uuid');
-  const passwordHash = await bcrypt.hash(password, 10);
-  query(
+  await query(
     `INSERT INTO users (id, nom, prenom, email, password, role, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 'ADMIN', datetime('now'), datetime('now'))`,
+     VALUES (?, ?, ?, ?, ?, 'ADMIN', NOW(), NOW())`,
     [uuidv4(), process.env.ADMIN_NOM || 'Administrateur', process.env.ADMIN_PRENOM || '', email, passwordHash]
   );
-  console.log(`✅ Compte administrateur prêt: ${email}`);
 }
 
-function ensureDevisUnitColumn() {
-  const result = db.exec('PRAGMA table_info(devis_articles)');
-  const columns = result[0]?.values || [];
-
-  if (!columns.some(column => column[1] === 'unite')) {
-    db.exec("ALTER TABLE devis_articles ADD COLUMN unite TEXT DEFAULT 'pièce'");
-    saveDatabase();
+async function testConnection() {
+  if (!pool) {
+    console.error('PostgreSQL pool is unavailable. Set DATABASE_URL before connecting.');
+    return false;
   }
-}
-
-function ensureDevisEmailColumn() {
-  if (!db) return;
-
   try {
-    const result = db.exec("PRAGMA table_info(devis)");
-    const columns = result[0]?.values || [];
-    const hasClientEmail = columns.some(column => column[1] === 'client_email');
-
-    if (!hasClientEmail) {
-      db.exec('ALTER TABLE devis ADD COLUMN client_email TEXT');
-      saveDatabase();
-    }
-  } catch (err) {
-    console.warn('⚠️ Impossible de vérifier/ajouter la colonne client_email:', err.message);
+    await pool.query('SELECT 1');
+    console.log('PostgreSQL connection successful');
+    return true;
+  } catch (error) {
+    console.error('PostgreSQL connection failed:', error.message);
+    return false;
   }
 }
 
-function ensureDevisDateColumn() {
-  if (!db) return;
-
-  try {
-    const result = db.exec("PRAGMA table_info(devis)");
-    const columns = result[0]?.values || [];
-    const hasDateDevis = columns.some(column => column[1] === 'date_devis');
-
-    if (!hasDateDevis) {
-      db.exec('ALTER TABLE devis ADD COLUMN date_devis TEXT');
-      saveDatabase();
-    }
-  } catch (err) {
-    console.warn('⚠️ Impossible de vérifier/ajouter la colonne date_devis:', err.message);
-  }
+async function closeConnection() {
+  if (pool) await pool.end();
 }
 
-function ensureBonVersementColumns() {
-  if (!db) return;
-
-  const columnsToAdd = [
-    ['beneficiaire_nom', 'TEXT'],
-    ['beneficiaire_prenom', 'TEXT'],
-    ['beneficiaire_entreprise', 'TEXT'],
-    ['beneficiaire_adresse', 'TEXT'],
-    ['beneficiaire_telephone', 'TEXT'],
-    ['beneficiaire_email', 'TEXT'],
-    ['mode_paiement', 'TEXT'],
-    ['objet', 'TEXT'],
-    ['reference', 'TEXT'],
-    ['banque', 'TEXT'],
-    ['numero_piece', 'TEXT'],
-    ['observation', 'TEXT'],
-    ['total_global', 'DECIMAL(12,2)'],
-    ['montant_verse', 'DECIMAL(12,2)'],
-    ['montant_reste', 'DECIMAL(12,2)']
-  ];
-
-  try {
-    const result = db.exec('PRAGMA table_info(bons_versement)');
-    const existingColumns = result[0]?.values || [];
-    const currentColumns = existingColumns.map(column => column[1]);
-
-    columnsToAdd.forEach(([columnName, columnType]) => {
-      if (!currentColumns.includes(columnName)) {
-        db.exec(`ALTER TABLE bons_versement ADD COLUMN ${columnName} ${columnType}`);
-      }
-    });
-
-    saveDatabase();
-  } catch (err) {
-    console.warn('⚠️ Impossible de vérifier/ajouter les colonnes du bon de versement:', err.message);
-  }
-}
-
-/**
- * Ferme la base de données
- */
-function closeConnection() {
-  if (!db) return;
-  db.close();
-}
-
-module.exports = {
-  query,
-  testConnection,
-  initDatabase,
-  closeConnection
-};
+module.exports = { pool, query, testConnection, initDatabase, closeConnection };

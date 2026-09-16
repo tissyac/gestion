@@ -39,7 +39,7 @@ const register = async (req, res, next) => {
     }
 
     // Vérifie si l'utilisateur existe déjà
-    const userExists = query(
+    const userExists = await query(
       'SELECT email FROM users WHERE lower(trim(email)) = ?',
       [email]
     );
@@ -53,14 +53,14 @@ const register = async (req, res, next) => {
 
     // Crée l'utilisateur avec un UUID
     const id = uuidv4();
-    query(
+    await query(
       `INSERT INTO users (id, nom, prenom, email, password, created_at, updated_at) 
        VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
       [id, nom || '', prenom || '', email, hashedPassword]
     );
 
     // Récupère l'utilisateur créé
-    const user = query(
+    const user = await query(
       'SELECT id, email, nom, prenom FROM users WHERE id = ?',
       [id]
     );
@@ -113,7 +113,7 @@ const login = async (req, res, next) => {
     }
 
     // Récupère l'utilisateur
-    const result = query(
+    const result = await query(
       'SELECT * FROM users WHERE lower(trim(email)) = ?',
       [email]
     );

@@ -2,29 +2,29 @@ const { query } = require('../config/database');
 
 const getOverview = async (req, res, next) => {
   try {
-    const users = query(
+    const users = (await query(
       'SELECT id, nom, prenom, email, role, is_active, created_at FROM users ORDER BY created_at DESC'
-    ).rows;
-    const devis = query(`
+    )).rows;
+    const devis = (await query(`
       SELECT d.*, u.email AS user_email,
         COALESCE(SUM(da.quantite * da.prix_unitaire), 0) AS montant_ht
       FROM devis d LEFT JOIN devis_articles da ON d.id = da.devis_id
       LEFT JOIN users u ON u.id = d.user_id
       GROUP BY d.id ORDER BY d.created_at DESC
-    `).rows;
-    const devisArticles = query('SELECT * FROM devis_articles ORDER BY devis_id, numero_ligne').rows;
-    const factures = query(`
+    `)).rows;
+    const devisArticles = (await query('SELECT * FROM devis_articles ORDER BY devis_id, numero_ligne')).rows;
+    const factures = (await query(`
       SELECT f.*, u.email AS user_email FROM factures f
       LEFT JOIN users u ON u.id = f.user_id ORDER BY f.created_at DESC
-    `).rows;
-    const bonsCommande = query(`
+    `)).rows;
+    const bonsCommande = (await query(`
       SELECT b.*, u.email AS user_email FROM bons_commande b
       LEFT JOIN users u ON u.id = b.user_id ORDER BY b.created_at DESC
-    `).rows;
-    const bonsVersement = query(`
+    `)).rows;
+    const bonsVersement = (await query(`
       SELECT b.*, u.email AS user_email FROM bons_versement b
       LEFT JOIN users u ON u.id = b.user_id ORDER BY b.created_at DESC
-    `).rows;
+    `)).rows;
 
     res.json({
       success: true,
