@@ -577,21 +577,21 @@ const generatePDF = async (req, res, next) => {
     } else {
       items.forEach((article, index) => {
         const rowColor = index % 2 === 0 ? colors.white : colors.light;
+        const descriptionText = article.designation || '';
+        doc.font('Helvetica').fontSize(tableFontSize);
+        const descriptionHeight = doc.heightOfString(descriptionText, { width: 228, lineGap: 1 });
+        const rowHeight = Math.max(18, descriptionHeight + 10);
         doc
           .rect(leftX, rowY, contentWidth, rowHeight)
           .fill(rowColor)
           .stroke(colors.border);
-
-        const descriptionText = article.designation.length > 42
-          ? `${article.designation.substring(0, 39)}...`
-          : article.designation;
 
         doc
           .font('Helvetica')
           .fontSize(tableFontSize)
           .fillColor(colors.text)
           .text(index + 1, cols.no, rowY + 5, { width: 24, align: 'center' })
-          .text(descriptionText, cols.desc, rowY + 5, { width: 228 })
+          .text(descriptionText, cols.desc, rowY + 5, { width: 228, lineGap: 1 })
           .text(article.unite || 'pièce', cols.unit, rowY + 5, { width: 40, align: 'center' })
           .text(String(article.quantite), cols.qty, rowY + 5, { width: 34, align: 'center' })
           .text(formatPrice(article.prix_unitaire) + ' DA', cols.pu, rowY + 5, { width: 80, align: 'right', lineBreak: false })

@@ -437,17 +437,18 @@ const generatePDF = async (req, res, next) => {
     } else {
       articles.forEach((article, index) => {
         const rowColor = index % 2 === 0 ? colors.white : colors.light;
+        const description = article.designation || '';
+        doc.font('Helvetica').fontSize(tableFontSize);
+        const descriptionHeight = doc.heightOfString(description, { width: 228, lineGap: 1 });
+        const rowHeight = Math.max(18, descriptionHeight + 10);
         doc.rect(leftX, rowY, contentWidth, rowHeight).fill(rowColor).stroke(colors.border);
-        const description = (article.designation || '').length > 42
-          ? `${(article.designation || '').substring(0, 39)}...`
-          : (article.designation || '');
         const quantity = Number(article.quantite) || 0;
         const unitPrice = Number(article.prix_unitaire) || 0;
         const lineTotal = quantity * unitPrice;
 
         doc.font('Helvetica').fontSize(tableFontSize).fillColor(colors.text)
           .text(index + 1, cols.no, rowY + 5, { width: 24, align: 'center' })
-          .text(description, cols.desc, rowY + 5, { width: 228 })
+          .text(description, cols.desc, rowY + 5, { width: 228, lineGap: 1 })
           .text(article.unite || 'pièce', cols.unit, rowY + 5, { width: 40, align: 'center' })
           .text(quantity.toString(), cols.qty, rowY + 5, { width: 34, align: 'center' })
           .text(formatCurrency(unitPrice) + ' DA', cols.pu, rowY + 5, { width: 80, align: 'right', lineBreak: false })
