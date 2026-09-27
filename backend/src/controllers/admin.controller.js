@@ -7,10 +7,15 @@ const getOverview = async (req, res, next) => {
     )).rows;
     const devis = (await query(`
       SELECT d.*, u.email AS user_email,
-        COALESCE(SUM(da.quantite * da.prix_unitaire), 0) AS montant_ht
-      FROM devis d LEFT JOIN devis_articles da ON d.id = da.devis_id
+        COALESCE(da.montant_ht, 0) AS montant_ht
+      FROM devis d
       LEFT JOIN users u ON u.id = d.user_id
-      GROUP BY d.id ORDER BY d.created_at DESC
+      LEFT JOIN (
+        SELECT devis_id, SUM(quantite * prix_unitaire) AS montant_ht
+        FROM devis_articles
+        GROUP BY devis_id
+      ) da ON da.devis_id = d.id
+      ORDER BY d.created_at DESC
     `)).rows;
     const devisArticles = (await query('SELECT * FROM devis_articles ORDER BY devis_id, numero_ligne')).rows;
     const factures = (await query(`
