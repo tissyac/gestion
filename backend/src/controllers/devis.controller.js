@@ -32,14 +32,17 @@ const listDevis = async (req, res, next) => {
         COALESCE(SUM(da.quantite * da.prix_unitaire), 0) as montant_ht
        FROM devis d
        LEFT JOIN devis_articles da ON d.id = da.devis_id
-        WHERE d.user_id = ?
+        WHERE (d.user_id = ? OR d.user_id IS NULL)
         GROUP BY d.id
         ORDER BY d.created_at DESC
         LIMIT ? OFFSET ?`,
       [req.user.id, limit, offset]
     );
 
-    const countResult = await query('SELECT COUNT(*) as count FROM devis WHERE user_id = ?', [req.user.id]);
+    const countResult = await query(
+      'SELECT COUNT(*) as count FROM devis WHERE user_id = ? OR user_id IS NULL',
+      [req.user.id]
+    );
     const total = Number(countResult.rows[0]?.count || 0);
 
     // Calcule les totaux TTC pour chaque devis
