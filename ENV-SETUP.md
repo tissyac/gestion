@@ -46,33 +46,20 @@ VITE_API_TIMEOUT=30000
 | `JWT_SECRET` | Clé secrète JWT | (générée aléatoirement) | ⚠️ Obligatoire |
 | `CORS_ORIGIN` | Domaines autorisés | `https://monapp.vercel.app` | `http://localhost:3000` |
 
-### Variables de Base de Données
+### Base de données PostgreSQL (Neon)
 
-#### Option 1: SQLite (Recommandé pour Free)
+Le backend utilise PostgreSQL via une seule variable `DATABASE_URL`. Pour repartir
+sur une base vide, créez un nouveau projet PostgreSQL chez Neon, puis copiez son
+URL de connexion dans les variables d'environnement du service backend Render.
+Ne partagez et ne versionnez jamais cette URL : elle contient un mot de passe.
 
-```bash
-DB_TYPE=sqlite
-DB_PATH=./data/erp.db
-```
+Au démarrage, le backend crée automatiquement ses tables si elles n'existent pas.
+Il ne faut donc ni exécuter un script de réinitialisation ni importer l'ancienne
+base pour commencer avec une base vide.
 
-**Avantages:**
-- ✅ Aucune configuration externe
-- ✅ Fonctionne sur tous les plans
-- ✅ Incluse dans le projet
-
-**Inconvénients:**
-- ❌ Les données peuvent être éphémères en Free Tier
-
-#### Option 2: PostgreSQL (Production)
-
-```bash
-DB_TYPE=postgresql
-DB_HOST=mondb.onrender.com
-DB_PORT=5432
-DB_NAME=erp_db
-DB_USER=postgres
-DB_PASSWORD=xxx
-```
+Le forfait gratuit Neon peut mettre la base en veille après une période
+d'inactivité et ne fournit pas de sauvegardes planifiées. Faites régulièrement
+un export indépendant de la base et conservez-le dans un emplacement sûr.
 
 ### Variables Optionnelles
 
@@ -85,18 +72,19 @@ DB_PASSWORD=xxx
 
 1. Allez dans votre **Web Service** Render
 2. Sélectionnez **Environment**
-3. Ajoutez chaque variable:
+3. Configurez les variables suivantes:
 
 ```
 NODE_ENV = production
-PORT = 5000
-JWT_SECRET = (généré automatiquement par Render)
+DATABASE_URL = (URL de connexion PostgreSQL du nouveau projet Neon)
 CORS_ORIGIN = https://votre-frontend.vercel.app
-DB_TYPE = sqlite
-DB_PATH = ./data/erp.db
 ```
 
-4. **Redéployez** le service pour appliquer les changements
+Conservez la valeur actuelle de `JWT_SECRET` pendant le changement de base afin
+de ne pas invalider les sessions existantes. Ne renseignez ni `DB_TYPE` ni
+`DB_PATH` : le backend n'utilise pas SQLite.
+
+4. Redéployez le service. L'initialisation crée alors les tables vides dans Neon.
 
 ### Générer une Clé JWT Sécurisée
 
@@ -134,8 +122,7 @@ NODE_ENV=production
 PORT=5000
 JWT_SECRET=votre_clé_très_secrète
 CORS_ORIGIN=https://votre-frontend.vercel.app
-DB_TYPE=sqlite
-DB_PATH=./data/erp.db
+DATABASE_URL=postgresql://...
 ```
 
 ```bash
@@ -179,8 +166,7 @@ VITE_API_URL=https://votre-backend.onrender.com/api
 [ ] PORT configuré
 [ ] JWT_SECRET défini (min 32 caractères)
 [ ] CORS_ORIGIN pointant vers le frontend
-[ ] DB_TYPE=sqlite (ou PostgreSQL si utilisé)
-[ ] DB_PATH correct (./data/erp.db)
+[ ] DATABASE_URL pointe vers le nouveau PostgreSQL Neon
 
 # Intégration
 [ ] Frontend peut se connecter au backend

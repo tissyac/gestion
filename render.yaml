@@ -11,10 +11,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DB_TYPE
-        value: sqlite
-      - key: DB_PATH
-        value: ./data/erp.db
+      - key: DATABASE_URL
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGIN
