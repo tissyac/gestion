@@ -23,7 +23,10 @@ export default function DevisListPage() {
         setTotal(response.pagination?.total || 0);
       } catch (error) {
         console.error('Erreur:', error);
-        alert('Erreur lors du chargement des devis');
+        const message = error?.message || error?.data?.message || (typeof error === 'string' ? error : null);
+        alert(message
+          ? `Erreur lors du chargement des devis : ${message}`
+          : 'Erreur lors du chargement des devis');
       } finally {
         setLoading(false);
       }

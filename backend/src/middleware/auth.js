@@ -45,11 +45,15 @@ const verifyToken = async (req, res, next) => {
     
     next();
   } catch (err) {
-    // Gère les erreurs JWT
     if (err instanceof AppError) {
-      throw err;
+      return next(err);
     }
-    throw new AppError('Token invalide ou expiré', 401);
+
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+      return next(new AppError('Token invalide ou expiré', 401));
+    }
+
+    return next(err);
   }
 };
 

@@ -32,10 +32,11 @@ const listDevis = async (req, res, next) => {
         COALESCE(SUM(da.quantite * da.prix_unitaire), 0) as montant_ht
        FROM devis d
        LEFT JOIN devis_articles da ON d.id = da.devis_id
-       GROUP BY d.id
-       ORDER BY d.created_at DESC 
-       LIMIT ? OFFSET ?`,
-      [limit, offset]
+        WHERE d.user_id = ?
+        GROUP BY d.id
+        ORDER BY d.created_at DESC
+        LIMIT ? OFFSET ?`,
+      [req.user.id, limit, offset]
     );
 
     const countResult = await query('SELECT COUNT(*) as count FROM devis WHERE user_id = ?', [req.user.id]);
